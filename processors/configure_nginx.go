@@ -80,7 +80,8 @@ type templateContext struct {
 func writeTemplateToDisk(siteConfig *oneill.SiteConfig, container docker.APIContainers) {
 	tmpl, err := template.New("nginx-config").Parse(nginxTemplate)
 	if err != nil {
-		panic(err)
+		oneill.LogWarning(fmt.Sprintf("Unable to load nginx config template: %s", siteConfig.Subdomain))
+		return
 	}
 
 	var b bytes.Buffer
@@ -91,13 +92,15 @@ func writeTemplateToDisk(siteConfig *oneill.SiteConfig, container docker.APICont
 	}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
-		panic(err)
+		oneill.LogWarning(fmt.Sprintf("Unable to execute nginx config template: %s", siteConfig.Subdomain))
+		return
 	}
 	outDir := oneill.Config.NginxConfigDirectory
 	outFile := path.Join(outDir, fmt.Sprintf("%s.conf", siteConfig.Subdomain))
 	err = ioutil.WriteFile(outFile, b.Bytes(), 0644)
 	if err != nil {
-		panic(err)
+		oneill.LogWarning(fmt.Sprintf("Unable to write nginx config template: %s", siteConfig.Subdomain))
+		return
 	}
 }
 
