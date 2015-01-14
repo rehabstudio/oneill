@@ -18,7 +18,7 @@ oneill is a small tool that manages a set of docker containers running on a sing
     - checks for duplicate subdomains
     - checks subdomain is a valid string (a-z, A-Z, 0-9, -_)
     - check that the specified container/tag exists and can be pulled locally
-    - check that the container exposes a single port #TODO
+    - check that the container exposes a single port
 - stop and remove any containers that don't match one of our valid definitions
 - start containers for all valid definitions (if they're not already running)
 - remove all existing nginx configurations

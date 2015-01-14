@@ -26,6 +26,11 @@ func loadConfig(path string) (*oneill.SiteConfig, error) {
 		return &sc, err
 	}
 
+	// set tag to "latest" if not set
+	if sc.Tag == "" {
+		sc.Tag = "latest"
+	}
+
 	return &sc, nil
 
 }
