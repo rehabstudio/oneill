@@ -1,0 +1,11 @@
+definitions_directory: "/etc/oneill/definitions"
+nginx_config_directory: "/etc/nginx/sites-enabled"
+log_level: 0
+serving_domain: example.com
+registry_credentials:
+    registry.example.com:
+        username: user@example.com
+        password: examplepassword
+    another-registry.example.com:
+        username: anotheruser@example.com
+        password: anotherexamplepassword
