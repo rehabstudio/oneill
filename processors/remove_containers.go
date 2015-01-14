@@ -20,8 +20,13 @@ func containerShouldBeRunning(c docker.APIContainers, siteConfigs []*oneill.Site
 	containerName := strings.TrimPrefix(c.Names[0], "/")
 	for _, sc := range siteConfigs {
 		if sc.Subdomain == containerName {
-			// check that the image running is the latest that's available locally
+			// check that the container is running
 			runningContainer := getContainerByID(c.ID)
+			if !runningContainer.State.Running {
+				oneill.LogDebug(fmt.Sprintf("Container present but exited: %s", containerName))
+				return false
+			}
+			// check that the image running is the latest that's available locally
 			availableImage := getImageByID(fmt.Sprintf("%s:%s", sc.Container, sc.Tag))
 			if runningContainer.Image == availableImage.ID {
 				return true
@@ -29,7 +34,6 @@ func containerShouldBeRunning(c docker.APIContainers, siteConfigs []*oneill.Site
 				oneill.LogDebug(fmt.Sprintf("Container running but not up to date: %s", containerName))
 				return false
 			}
-
 		}
 	}
 	return false
