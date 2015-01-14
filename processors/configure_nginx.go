@@ -120,7 +120,9 @@ func ConfigureNginx(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
 		}
 	}
 	if err := reloadNginxConfig(); err != nil {
-		panic(err)
+		oneill.LogWarning("Unable to reload nginx configuration")
+		return siteConfigs
 	}
+	oneill.LogDebug("Reloaded nginx configuration")
 	return siteConfigs
 }
