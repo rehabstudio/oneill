@@ -20,6 +20,11 @@ const (
           server localhost:{{.Port}};
         }
 
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            ''      close;
+        }
+
         server {
           listen *:80;
           server_name {{.Subdomain}}.{{.ServingDomain}};
@@ -47,6 +52,9 @@ const (
             proxy_set_header  Host           $http_host;   # required for docker client's sake
             proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
             proxy_read_timeout               900;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
           }
 
         }
