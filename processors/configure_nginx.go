@@ -87,6 +87,11 @@ func writeTemplateToDisk(siteConfig *oneill.SiteConfig, container docker.APICont
 		return
 	}
 
+	if len(container.Ports) < 1 {
+		oneill.LogWarning(fmt.Sprintf("Container not exposing any ports, skipping configuration: %s", siteConfig.Subdomain))
+		return
+	}
+
 	var b bytes.Buffer
 	context := templateContext{
 		Subdomain:     siteConfig.Subdomain,
