@@ -66,11 +66,13 @@ func ensureFreshOutputDir() {
 	outDir := oneill.Config.NginxConfigDirectory
 	err := os.RemoveAll(outDir)
 	if err != nil {
-		panic(err)
+		oneill.LogError(fmt.Sprintf("Unable to remove nginx configuration directory: %s", err))
+		os.Exit(1)
 	}
 	err = os.Mkdir(outDir, 0755)
 	if err != nil {
-		panic(err)
+		oneill.LogError(fmt.Sprintf("Unable to recreate nginx configuration directory: %s", err))
+		os.Exit(1)
 	}
 }
 

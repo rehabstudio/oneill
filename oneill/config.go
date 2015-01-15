@@ -2,7 +2,9 @@ package oneill
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -57,7 +59,10 @@ func InitConfig() {
 
 	config, err := loadConfigFile(*configFile)
 	if err != nil {
-		panic(err)
+		// we use baseLogger directly because until config is parsed our
+		// logging setup won't work correctly
+		baseLogger("ERROR", fmt.Sprintf("Error loading configuration file: %s", err))
+		os.Exit(1)
 	}
 	Config = config
 	loadDefaults()
