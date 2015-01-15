@@ -61,7 +61,7 @@ func InitConfig() {
 	if err != nil {
 		// we use baseLogger directly because until config is parsed our
 		// logging setup won't work correctly
-		baseLogger("ERROR", fmt.Sprintf("Error loading configuration file: %s", err))
+		baseLogger("FATAL", fmt.Sprintf("Error loading configuration file: %s", err))
 		os.Exit(1)
 	}
 	Config = config

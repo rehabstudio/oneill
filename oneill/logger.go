@@ -36,3 +36,10 @@ func LogError(message string) {
 	}
 	baseLogger("ERROR", message)
 }
+
+func LogFatal(message string) {
+	if Config.LogLevel > 4 {
+		return
+	}
+	baseLogger("FATAL", message)
+}

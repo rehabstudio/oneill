@@ -1,9 +1,7 @@
 package processors
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 
 	"github.com/rehabstudio/oneill/oneill"
@@ -39,10 +37,8 @@ func loadConfig(path string) (*oneill.SiteConfig, error) {
 
 func LoadSiteDefinitions(_ []*oneill.SiteConfig) (siteConfigs []*oneill.SiteConfig) {
 	dirContents, err := ioutil.ReadDir(oneill.Config.DefinitionsDirectory)
-	if err != nil {
-		oneill.LogError(fmt.Sprintf("Unable to read definitions directory: %s", err))
-		os.Exit(1)
-	}
+	oneill.ExitOnError(err, "Unable to read definitions directory")
+
 	for _, f := range dirContents {
 		if f.IsDir() {
 			sc, err := loadConfig(path.Join(oneill.Config.DefinitionsDirectory, f.Name(), "siteconfig.yaml"))
@@ -52,5 +48,6 @@ func LoadSiteDefinitions(_ []*oneill.SiteConfig) (siteConfigs []*oneill.SiteConf
 			siteConfigs = append(siteConfigs, sc)
 		}
 	}
+
 	return siteConfigs
 }

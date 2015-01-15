@@ -2,7 +2,6 @@ package processors
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
@@ -46,10 +45,7 @@ func RemoveContainers(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
 	for _, c := range oneill.ListContainers() {
 		if !containerShouldBeRunning(c, siteConfigs) {
 			err := oneill.DockerClient.RemoveContainer(removeContainerOptions(c))
-			if err != nil {
-				oneill.LogError(fmt.Sprintf("Unable to remove docker container: %s", err))
-				os.Exit(1)
-			}
+			oneill.ExitOnError(err, "Unable to remove docker container")
 			containerName := strings.TrimPrefix(c.Names[0], "/")
 			oneill.LogInfo(fmt.Sprintf("Removed container: %s", containerName))
 		}
