@@ -4,8 +4,11 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/rehabstudio/oneill/oneill"
 	"gopkg.in/yaml.v2"
+
+	"github.com/rehabstudio/oneill/config"
+	"github.com/rehabstudio/oneill/logger"
+	"github.com/rehabstudio/oneill/oneill"
 )
 
 // loadConfig loads a siteconfig.yaml file from disk and unmarshalls it to a
@@ -36,12 +39,12 @@ func loadConfig(path string) (*oneill.SiteConfig, error) {
 }
 
 func LoadSiteDefinitions(_ []*oneill.SiteConfig) (siteConfigs []*oneill.SiteConfig) {
-	dirContents, err := ioutil.ReadDir(oneill.Config.DefinitionsDirectory)
-	oneill.ExitOnError(err, "Unable to read definitions directory")
+	dirContents, err := ioutil.ReadDir(config.Config.DefinitionsDirectory)
+	logger.ExitOnError(err, "Unable to read definitions directory")
 
 	for _, f := range dirContents {
 		if f.IsDir() {
-			sc, err := loadConfig(path.Join(oneill.Config.DefinitionsDirectory, f.Name(), "siteconfig.yaml"))
+			sc, err := loadConfig(path.Join(config.Config.DefinitionsDirectory, f.Name(), "siteconfig.yaml"))
 			if err != nil {
 				continue
 			}

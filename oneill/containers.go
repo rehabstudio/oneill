@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
+
+	"github.com/rehabstudio/oneill/logger"
 )
 
 const (
@@ -16,7 +18,7 @@ func InitDockerClient() {
 	// connect to the docker daemon and initialise a new API client
 	var err error
 	DockerClient, err = docker.NewClient(dockerEndpoint)
-	ExitOnError(err, "Error initialising docker client")
+	logger.ExitOnError(err, "Error initialising docker client")
 }
 
 func ContainerIsRunning(name string, containers []docker.APIContainers) bool {
@@ -31,13 +33,13 @@ func ContainerIsRunning(name string, containers []docker.APIContainers) bool {
 func ListContainers() []docker.APIContainers {
 	c, err := DockerClient.ListContainers(docker.ListContainersOptions{All: true})
 	// if at any point we can't list containers we really don't want to continue
-	ExitOnError(err, "Error listing local docker containers")
+	logger.ExitOnError(err, "Error listing local docker containers")
 	return c
 }
 
 func ListImages() []docker.APIImages {
 	c, err := DockerClient.ListImages(docker.ListImagesOptions{All: true})
 	// if at any point we can't list images we really don't want to continue
-	ExitOnError(err, "Error listing local docker images")
+	logger.ExitOnError(err, "Error listing local docker images")
 	return c
 }

@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
+
+	"github.com/rehabstudio/oneill/logger"
 	"github.com/rehabstudio/oneill/oneill"
 )
 
@@ -71,23 +73,23 @@ func getImageForSiteConfig(siteConfig *oneill.SiteConfig, images []docker.APIIma
 
 func validateSiteDefinition(siteConfig *oneill.SiteConfig, siteConfigs []*oneill.SiteConfig) bool {
 	if !rxContainerName.MatchString(siteConfig.Subdomain) {
-		oneill.LogWarning(fmt.Sprintf("%s is not a valid container name", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("%s is not a valid container name", siteConfig.Subdomain))
 		return false
 	}
 	if !definitionIsUnique(siteConfig, siteConfigs) {
-		oneill.LogWarning(fmt.Sprintf("%s is not unique", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("%s is not unique", siteConfig.Subdomain))
 		return false
 	}
-	oneill.LogDebug(fmt.Sprintf("%s is valid", siteConfig.Subdomain))
+	logger.LogDebug(fmt.Sprintf("%s is valid", siteConfig.Subdomain))
 	return true
 }
 
 func ValidateDefinitionsPrePull(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
-	oneill.LogInfo("## Validating site definitions (pre pull)")
+	logger.LogInfo("## Validating site definitions (pre pull)")
 
 	var newSiteConfigs []*oneill.SiteConfig
 	for _, siteConfig := range siteConfigs {
-		oneill.LogDebug(fmt.Sprintf("Validating %s", siteConfig.Subdomain))
+		logger.LogDebug(fmt.Sprintf("Validating %s", siteConfig.Subdomain))
 		if validateSiteDefinition(siteConfig, siteConfigs) {
 			newSiteConfigs = append(newSiteConfigs, siteConfig)
 		}
@@ -96,7 +98,7 @@ func ValidateDefinitionsPrePull(siteConfigs []*oneill.SiteConfig) []*oneill.Site
 }
 
 func ValidateDefinitionsPostPull(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
-	oneill.LogInfo("## Validating site definitions (post pull)")
+	logger.LogInfo("## Validating site definitions (post pull)")
 
 	images := oneill.ListImages()
 	var newSiteConfigs []*oneill.SiteConfig
@@ -104,13 +106,13 @@ func ValidateDefinitionsPostPull(siteConfigs []*oneill.SiteConfig) []*oneill.Sit
 		// check that an appropriate image exists locally
 		apiImage, err := getImageForSiteConfig(siteConfig, images)
 		if err != nil {
-			oneill.LogWarning(fmt.Sprintf("%s:%s cannot be found", siteConfig.Container, siteConfig.Tag))
+			logger.LogWarning(fmt.Sprintf("%s:%s cannot be found", siteConfig.Container, siteConfig.Tag))
 			continue
 		}
 		// check that the image only exposes one port
 		image := getImageByID(apiImage.ID)
 		if !checkOnlyOneExposedPort(image) {
-			oneill.LogWarning(fmt.Sprintf("%s:%s does not expose exactly 1 port", siteConfig.Container, siteConfig.Tag))
+			logger.LogWarning(fmt.Sprintf("%s:%s does not expose exactly 1 port", siteConfig.Container, siteConfig.Tag))
 			continue
 		}
 		newSiteConfigs = append(newSiteConfigs, siteConfig)

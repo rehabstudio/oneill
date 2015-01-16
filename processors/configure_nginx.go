@@ -11,6 +11,9 @@ import (
 	"text/template"
 
 	"github.com/fsouza/go-dockerclient"
+
+	"github.com/rehabstudio/oneill/config"
+	"github.com/rehabstudio/oneill/logger"
 	"github.com/rehabstudio/oneill/oneill"
 )
 
@@ -62,11 +65,11 @@ const (
 )
 
 func ensureFreshOutputDir() {
-	oneill.LogDebug("Recreating empty configuration directory")
+	logger.LogDebug("Recreating empty configuration directory")
 
-	outDir := oneill.Config.NginxConfigDirectory
-	oneill.ExitOnError(os.RemoveAll(outDir), "Unable to remove nginx configuration directory")
-	oneill.ExitOnError(os.Mkdir(outDir, 0755), "Unable to recreate nginx configuration directory")
+	outDir := config.Config.NginxConfigDirectory
+	logger.ExitOnError(os.RemoveAll(outDir), "Unable to remove nginx configuration directory")
+	logger.ExitOnError(os.Mkdir(outDir, 0755), "Unable to recreate nginx configuration directory")
 }
 
 func reloadNginxConfig() error {
@@ -83,37 +86,37 @@ type templateContext struct {
 func writeTemplateToDisk(siteConfig *oneill.SiteConfig, container docker.APIContainers) {
 	tmpl, err := template.New("nginx-config").Parse(nginxTemplate)
 	if err != nil {
-		oneill.LogWarning(fmt.Sprintf("Unable to load nginx config template: %s", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("Unable to load nginx config template: %s", siteConfig.Subdomain))
 		return
 	}
 
 	if len(container.Ports) < 1 {
-		oneill.LogWarning(fmt.Sprintf("Container not exposing any ports, skipping configuration: %s", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("Container not exposing any ports, skipping configuration: %s", siteConfig.Subdomain))
 		return
 	}
 
 	var b bytes.Buffer
 	context := templateContext{
 		Subdomain:     siteConfig.Subdomain,
-		ServingDomain: oneill.Config.ServingDomain,
+		ServingDomain: config.Config.ServingDomain,
 		Port:          container.Ports[0].PublicPort,
 	}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
-		oneill.LogWarning(fmt.Sprintf("Unable to execute nginx config template: %s", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("Unable to execute nginx config template: %s", siteConfig.Subdomain))
 		return
 	}
-	outDir := oneill.Config.NginxConfigDirectory
+	outDir := config.Config.NginxConfigDirectory
 	outFile := path.Join(outDir, fmt.Sprintf("%s.conf", siteConfig.Subdomain))
 	err = ioutil.WriteFile(outFile, b.Bytes(), 0644)
 	if err != nil {
-		oneill.LogWarning(fmt.Sprintf("Unable to write nginx config template: %s", siteConfig.Subdomain))
+		logger.LogWarning(fmt.Sprintf("Unable to write nginx config template: %s", siteConfig.Subdomain))
 		return
 	}
 }
 
 func ConfigureNginx(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
-	oneill.LogInfo("## Configuring Nginx")
+	logger.LogInfo("## Configuring Nginx")
 
 	ensureFreshOutputDir()
 
@@ -122,15 +125,15 @@ func ConfigureNginx(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
 			containerName := strings.TrimPrefix(container.Names[0], "/")
 			if containerName == sc.Subdomain {
 				writeTemplateToDisk(sc, container)
-				oneill.LogDebug(fmt.Sprintf("Configured nginx proxy for container: %s", sc.Subdomain))
+				logger.LogDebug(fmt.Sprintf("Configured nginx proxy for container: %s", sc.Subdomain))
 				break
 			}
 		}
 	}
 	if err := reloadNginxConfig(); err != nil {
-		oneill.LogWarning("Unable to reload nginx configuration")
+		logger.LogWarning("Unable to reload nginx configuration")
 		return siteConfigs
 	}
-	oneill.LogDebug("Reloaded nginx configuration")
+	logger.LogDebug("Reloaded nginx configuration")
 	return siteConfigs
 }

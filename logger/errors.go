@@ -1,4 +1,4 @@
-package oneill
+package logger
 
 import (
 	"fmt"

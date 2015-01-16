@@ -5,6 +5,9 @@ import (
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
+
+	"github.com/rehabstudio/oneill/config"
+	"github.com/rehabstudio/oneill/logger"
 	"github.com/rehabstudio/oneill/oneill"
 )
 
@@ -18,7 +21,7 @@ func getRegistryForContainer(container string) string {
 
 func authConfiguration(siteConfig *oneill.SiteConfig) docker.AuthConfiguration {
 	registry := getRegistryForContainer(siteConfig.Container)
-	credentials := oneill.Config.RegistryCredentials[registry]
+	credentials := config.Config.RegistryCredentials[registry]
 	return docker.AuthConfiguration{
 		Username: credentials.Username,
 		Password: credentials.Password,
@@ -33,13 +36,13 @@ func pullImageOptions(siteConfig *oneill.SiteConfig) docker.PullImageOptions {
 }
 
 func PullImages(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
-	oneill.LogInfo("## Pulling latest images from registry")
+	logger.LogInfo("## Pulling latest images from registry")
 
 	for _, sc := range siteConfigs {
-		oneill.LogDebug(fmt.Sprintf("Pulling container image from registry: %s:%s", sc.Container, sc.Tag))
+		logger.LogDebug(fmt.Sprintf("Pulling container image from registry: %s:%s", sc.Container, sc.Tag))
 		err := oneill.DockerClient.PullImage(pullImageOptions(sc), authConfiguration(sc))
 		if err != nil {
-			oneill.LogWarning(fmt.Sprintf("Unable to pull image from registry %s:%s", sc.Container, sc.Tag))
+			logger.LogWarning(fmt.Sprintf("Unable to pull image from registry %s:%s", sc.Container, sc.Tag))
 		}
 	}
 	return siteConfigs

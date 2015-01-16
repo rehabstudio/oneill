@@ -1,5 +1,9 @@
 package oneill
 
+import (
+	"github.com/rehabstudio/oneill/logger"
+)
+
 type Processor func([]*SiteConfig) []*SiteConfig
 
 type ProcessorPipeline struct {
@@ -11,7 +15,7 @@ func (p *ProcessorPipeline) AddProcessor(processor Processor) {
 }
 
 func (p *ProcessorPipeline) RunPipeline() []*SiteConfig {
-	LogDebug("Running processor pipeline")
+	logger.LogDebug("Running processor pipeline")
 	var siteDefinitions []*SiteConfig
 	for _, processor := range p.processors {
 		siteDefinitions = processor(siteDefinitions)

@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/fsouza/go-dockerclient"
+
+	"github.com/rehabstudio/oneill/logger"
 	"github.com/rehabstudio/oneill/oneill"
 )
 
 func StartContainers(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
-	oneill.LogInfo("## Starting required containers")
+	logger.LogInfo("## Starting required containers")
 	activeContainers := oneill.ListContainers()
 
 	for _, sc := range siteConfigs {
@@ -29,7 +31,7 @@ func StartContainers(siteConfigs []*oneill.SiteConfig) []*oneill.SiteConfig {
 		if err != nil {
 			continue
 		}
-		oneill.LogInfo(fmt.Sprintf("Started container: %s", sc.Subdomain))
+		logger.LogInfo(fmt.Sprintf("Started container: %s", sc.Subdomain))
 	}
 	return siteConfigs
 }
