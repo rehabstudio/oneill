@@ -209,7 +209,7 @@ func (d *dockerClient) RemoveContainer(container docker.APIContainers) error {
 func (d *dockerClient) StartContainer(subdomain, image, tag string, env []string) error {
 	logger.L.Info(fmt.Sprintf("Starting docker container: %s (%s:%s)", subdomain, image, tag))
 
-	hostConfig := docker.HostConfig{PublishAllPorts: true}
+	hostConfig := docker.HostConfig{PublishAllPorts: true, RestartPolicy: docker.RestartOnFailure(10)}
 	createContainerOptions := docker.CreateContainerOptions{
 		Name:       subdomain,
 		Config:     &docker.Config{Image: fmt.Sprintf("%s:%s", image, tag), Env: env},
