@@ -30,32 +30,37 @@ oneill is a small tool that manages a set of docker containers running on a sing
 ## Configuration structure
 
 Configuration is managed by a collection of yaml files in a structured
-directory. Users can optionally add an encrypted `.env` file that will be
-decrypted and passed to the container at runtime.
+directory.
 
 
 ```
 .
 +-- demo-golang
-|   +-- siteconfig.yaml
-|   +-- .env
+|   +-- container.yaml
 +-- my-nodejs-site
-|   +-- siteconfig.yaml
+|   +-- container.yaml
 +-- python-flask-example
-|   +-- siteconfig.yaml
+|   +-- container.yaml
 ```
 
-Eack `siteconfig.yaml` file *must* contain the following two keys:
+Each `container.yaml` file should contain the following keys:
 
 ```yaml
-subdomain: example-subdomain
-container: example/some-container
+subdomain: example-subdomain     # required
+image: example/some-container    # required
+tag: v123                        # optional (default: "latest")
+env:                             # optional (default: [])
+  - "EXAMPLE=example"
+  - "URL=http://www.example.com"
 ```
 
 
 ## Installation
 
-Download the release binary and make it executable.
+Download the release binary and make it executable. Although the url below has
+the word "stable" in it, releases should be considered beta quality at best
+until we say otherwise (Stable releases will be available once we have
+something to release).
 
 ```bash
 $ wget http://storage.googleapis.com/rehab-labs-oneill-releases/stable/oneill
@@ -75,4 +80,4 @@ this'll be safer later). The easiest way to accomplish this is with the
 
 ```bash
 $ apt-get install run-one
-$ ./oneill -config=myconfig.yaml
+$ run-one ./oneill -config=myconfig.yaml

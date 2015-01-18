@@ -17,7 +17,7 @@ type Client interface {
 	LoadImage(string, string) (*docker.Image, error)
 	PullImage(string, string) error
 	RemoveContainer(docker.APIContainers) error
-	StartContainer(string, string, string) error
+	StartContainer(string, string, string, []string) error
 }
 
 type ContainerDefinition struct {

@@ -86,7 +86,7 @@ func (a *Application) RunApplication() error {
 			continue
 		}
 		// create and start the container
-		a.dockerClient.StartContainer(cd.Subdomain, cd.Image, cd.Tag)
+		a.dockerClient.StartContainer(cd.Subdomain, cd.Image, cd.Tag, cd.Env)
 	}
 
 	// Clear out any existing files in the directory

@@ -2,6 +2,7 @@ package containers
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/fsouza/go-dockerclient"
@@ -55,18 +56,45 @@ func (d *dockerClient) ContainerRunning(name string) bool {
 	return true
 }
 
+// envsMatch checks if a running container's environment matches the one
+// defined in a container definition. The variables defined in the container
+// definition are added to those defined in the base image before comparing
+// with those read from the running container.
+func envsMatch(env0, env1, fromImage []string) bool {
+
+	for _, v := range fromImage {
+		env0 = append(env0, v)
+	}
+
+	if len(env0) != len(env1) {
+		return false
+	}
+
+	sort.Strings(env0)
+	sort.Strings(env1)
+	for i := range env0 {
+		if env0[i] != env1[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (d *dockerClient) ContainerShouldBeRunning(container docker.APIContainers, definitions map[string]*definitions.ContainerDefinition) bool {
 
 	// check that a definition with the container's name exists
 	containerName := strings.TrimPrefix(container.Names[0], "/")
 	definition, ok := definitions[containerName]
 	if !ok {
+		logger.L.Debug(fmt.Sprintf("Container does not match any valid definition: %s", containerName))
 		return false
 	}
 
 	// check that the container is actually running
 	runningContainer := d.getContainerByID(container.ID)
 	if !runningContainer.State.Running {
+		logger.L.Debug(fmt.Sprintf("Container is not running: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
 		return false
 	}
 
@@ -74,12 +102,21 @@ func (d *dockerClient) ContainerShouldBeRunning(container docker.APIContainers, 
 	// probably a bit paranoid, but performance isn't critical here)
 	availableImage, err := d.LoadImage(definition.Image, definition.Tag)
 	if err != nil {
+		logger.L.Debug(fmt.Sprintf("Image with tag not found locally: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
 		return false
 	}
 
 	// check that the image running is the latest that's available locally
 	if runningContainer.Image != availableImage.ID {
 		// container running but out-of date
+		logger.L.Debug(fmt.Sprintf("Running container is not running the latest image: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
+		return false
+	}
+
+	// check that the running container's environment matches the one in
+	// the container definition
+	if !envsMatch(definition.Env, runningContainer.Config.Env, availableImage.Config.Env) {
+		logger.L.Debug(fmt.Sprintf("Environments do not match: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
 		return false
 	}
 
@@ -169,13 +206,13 @@ func (d *dockerClient) RemoveContainer(container docker.APIContainers) error {
 	return d.client.RemoveContainer(removeContainerOptions)
 }
 
-func (d *dockerClient) StartContainer(subdomain, image, tag string) error {
+func (d *dockerClient) StartContainer(subdomain, image, tag string, env []string) error {
 	logger.L.Info(fmt.Sprintf("Starting docker container: %s (%s:%s)", subdomain, image, tag))
 
 	hostConfig := docker.HostConfig{PublishAllPorts: true}
 	createContainerOptions := docker.CreateContainerOptions{
 		Name:       subdomain,
-		Config:     &docker.Config{Image: fmt.Sprintf("%s:%s", image, tag)},
+		Config:     &docker.Config{Image: fmt.Sprintf("%s:%s", image, tag), Env: env},
 		HostConfig: &hostConfig,
 	}
 
