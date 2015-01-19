@@ -2,7 +2,7 @@ package config
 
 type Configuration struct {
 	LogLevel             int                            `yaml:"log_level,omitempty"`
-	DefinitionsDirectory string                         `yaml:"definitions_directory,omitempty"`
+	DefinitionsURI       string                         `yaml:"definitions_uri,omitempty"`
 	DockerApiEndpoint    string                         `yaml:"docker_api_endpoint,omitempty"`
 	NginxConfigDirectory string                         `yaml:"nginx_config_directory,omitempty"`
 	ServingDomain        string                         `yaml:"serving_domain,omitempty"`

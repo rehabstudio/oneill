@@ -36,8 +36,8 @@ func loadConfigFromBytes(data []byte) (cd *Configuration, err error) {
 // loadDefaultConfig initialises a config struct and populates it with default values
 func loadDefaultConfig(config *Configuration) *Configuration {
 
-	if isZero(config.DefinitionsDirectory) {
-		config.DefinitionsDirectory = defaultDefinitionsDirectory
+	if isZero(config.DefinitionsURI) {
+		config.DefinitionsURI = defaultDefinitionsURI
 	}
 	if isZero(config.DockerApiEndpoint) {
 		config.DockerApiEndpoint = defaultDockerApiEndpoint

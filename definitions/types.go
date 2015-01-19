@@ -6,3 +6,8 @@ type ContainerDefinition struct {
 	Tag       string   `yaml:"tag"`
 	Env       []string `yaml:"env"`
 }
+
+type DefinitionLoader interface {
+	LoadContainerDefinitions() ([]*ContainerDefinition, error)
+	ValidateURI() error
+}

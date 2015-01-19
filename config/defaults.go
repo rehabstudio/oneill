@@ -3,7 +3,7 @@ package config
 import "reflect"
 
 const (
-	defaultDefinitionsDirectory string = "/etc/oneill/definitions"
+	defaultDefinitionsURI       string = "/etc/oneill/definitions"
 	defaultDockerApiEndpoint    string = "unix:///var/run/docker.sock"
 	defaultNginxConfigDirectory string = "/etc/nginx/sites-enabled"
 	defaultServingDomain        string = "example.com"

@@ -38,7 +38,9 @@ func main() {
 	exitOnError(err, "Unable to connect to docker API")
 
 	// load and validate container definitions
-	definitions, err := definitions.LoadContainerDefinitions(config.DefinitionsDirectory)
+	definitionLoader, err := definitions.GetLoader(config.DefinitionsURI)
+	exitOnError(err, "Unable to load container definitions")
+	definitions, err := definitions.LoadContainerDefinitions(definitionLoader)
 	exitOnError(err, "Unable to load container definitions")
 
 	// initialise a new Application instance and start it
