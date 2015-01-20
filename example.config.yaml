@@ -1,7 +1,45 @@
+#####################################
+# Example oneill configuration file #
+#####################################
+
+# This file shows all possible settings keys with explanations on the use of
+# each one.
+
+# see README.md for explanation of appropriate values for `definitions_uri`
 definitions_uri: "file:///etc/oneill/definitions"
+
+# The directory to which nginx configuration files should be written. Note
+# that oneill expects to own this directory and will remove any files
+# contained within the folder if they don't match a running container.
 nginx_config_directory: "/etc/nginx/sites-enabled"
-log_level: 0
+
+# log_level controls the amount of output produced by oneill. The following
+# values are permitted:
+#
+# 1: DEBUG
+# 2: INFO
+# 3: WARNING
+# 4: ERROR
+log_level: 1
+
+# The domain specified here will be used when generating nginx configuration
+# files for the containers. This should be a valid domain name/hostname that
+# resolves to the system running oneill. If you want subdomains created by
+# oneill to work automatically you should create a `*.example.com` DNS A
+# record pointing at the server running oneill.
+#
+# Note: at the moment, oneill expects to be running on a server with a working
+# nginx setup with valid SSL certificates in place. Changes are planned which
+# should allow oneill to work without https and on localhost (with proper
+# routing for testing purposes).
 serving_domain: example.com
+
+# registry_credentials is a map in which you can specify login details for any
+# private registry you wish to use with oneill (you can ignore this if your
+# private registry does not require login). The keys should be the name/url
+# (without scheme) of the registry, the values should be another map
+# containing both the username and password that should be used for each
+# registry.
 registry_credentials:
     registry.example.com:
         username: user@example.com
