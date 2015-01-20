@@ -3,6 +3,9 @@ package definitions
 import (
 	"fmt"
 	"net/url"
+	"os"
+
+	"github.com/andrew-d/go-termutil"
 )
 
 // GetLoader parses a given URI and returns an appropriate loader. For now
@@ -15,6 +18,11 @@ func GetLoader(uriStr string) (DefinitionLoader, error) {
 	uri, err := url.Parse(uriStr)
 	if err != nil {
 		return &LoaderDirectory{rootDirectory: ""}, err
+	}
+
+	// return the stdin loader if data has been piped to stdin
+	if !termutil.Isatty(os.Stdin.Fd()) {
+		return &LoaderStdin{}, nil
 	}
 
 	// return an appropriate file or directory loader
