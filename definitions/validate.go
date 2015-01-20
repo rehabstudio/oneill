@@ -2,6 +2,7 @@ package definitions
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/rehabstudio/oneill/logger"
@@ -10,6 +11,22 @@ import (
 var (
 	rxContainerName = regexp.MustCompile(`^/?[a-zA-Z0-9_-]+$`)
 )
+
+func isDirectory(path string) error {
+
+	// check if rootDirectory exists
+	src, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+
+	// check if rootDirectory is actually a directory
+	if !src.IsDir() {
+		return fmt.Errorf("%s is not a directory", path)
+	}
+
+	return nil
+}
 
 func definitionIsUnique(cd *ContainerDefinition, cds []*ContainerDefinition) bool {
 	var count int
