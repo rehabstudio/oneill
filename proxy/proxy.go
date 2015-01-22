@@ -47,8 +47,10 @@ const (
           chunked_transfer_encoding on;
 
           location / {
+            {{if .HasHtpasswd}}
             auth_basic                       "Restricted";
             auth_basic_user_file             {{.HtpasswdFile}};
+	    {{end}}
             proxy_pass                       http://{{.Subdomain}};
             proxy_set_header  Host           $http_host;   # required for docker client's sake
             proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
@@ -89,21 +91,27 @@ type templateContext struct {
 	Subdomain    string
 	HtpasswdFile string
 	Domain       string
+	HasHtpasswd  bool
 	Port         int64
 }
 
 // WriteConfig generates an nginx config file to allow reverse proxying into running
 // containers. The template is loaded, populated with data and then written to disk.
 func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64) error {
-	logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
 
 	// create htpasswd file
+	var hasHtpasswd bool
 	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
-	d := []byte(strings.Join(htpasswd, "\n"))
-	err := ioutil.WriteFile(htpasswdFile, d, 0644)
-	if err != nil {
-		logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file to: %s", err))
-		return err
+	c := strings.Join(htpasswd, "\n")
+	if strings.TrimSpace(c) != "" {
+		logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
+		d := []byte(c)
+		err := ioutil.WriteFile(htpasswdFile, d, 0644)
+		if err != nil {
+			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file to: %s", err))
+			return err
+		}
+		hasHtpasswd = true
 	}
 
 	logger.L.Debug(fmt.Sprintf("Writing nginx configuration for %s.%s", subdomain, domain))
@@ -116,7 +124,7 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 
 	// build template context and render the template to `b`
 	var b bytes.Buffer
-	context := templateContext{Subdomain: subdomain, HtpasswdFile: htpasswdFile, Domain: domain, Port: port}
+	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, Domain: domain, Port: port}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
 		logger.L.Error(fmt.Sprintf("Unable to execute nginx config template: %s", subdomain))
