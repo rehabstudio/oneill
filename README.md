@@ -87,6 +87,9 @@ tag: v123                        # optional (default: "latest")
 env:                             # optional (default: [])
   - "EXAMPLE=example"
   - "URL=http://www.example.com"
+htpasswd:
+  - bob:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
+  - jon:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
 ```
 
 
