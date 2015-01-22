@@ -71,6 +71,13 @@ file. The following types of URI are supported:
   is fetched and parsed as JSON/YAML. The response should contain a list
   (array) of container definitions.
 
+Definitions can also be read from STDIN. When data is passed to STDIN, any URI
+specified in the configuration file will be ignored. For example:
+
+```bash
+$ cat containers.yaml | oneill
+```
+
 A single container definition should contain the following data:
 
 ```yaml
@@ -80,6 +87,9 @@ tag: v123                        # optional (default: "latest")
 env:                             # optional (default: [])
   - "EXAMPLE=example"
   - "URL=http://www.example.com"
+htpasswd:
+  - bob:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
+  - jon:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
 ```
 
 

@@ -5,6 +5,7 @@ type ContainerDefinition struct {
 	Image     string   `yaml:"image"`
 	Tag       string   `yaml:"tag"`
 	Env       []string `yaml:"env"`
+	Htpasswd  []string `yaml:"htpasswd"`
 }
 
 type DefinitionLoader interface {
