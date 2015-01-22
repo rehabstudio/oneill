@@ -108,7 +108,7 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 		d := []byte(c)
 		err := ioutil.WriteFile(htpasswdFile, d, 0644)
 		if err != nil {
-			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file to: %s", err))
+			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file: %s", err))
 			return err
 		}
 		hasHtpasswd = true
