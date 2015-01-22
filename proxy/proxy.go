@@ -50,7 +50,7 @@ const (
             {{if .HasHtpasswd}}
             auth_basic                       "Restricted";
             auth_basic_user_file             {{.HtpasswdFile}};
-	    {{end}}
+            {{end}}
             proxy_pass                       http://{{.Subdomain}};
             proxy_set_header  Host           $http_host;   # required for docker client's sake
             proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
@@ -102,13 +102,13 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	// create htpasswd file
 	var hasHtpasswd bool
 	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
-	c := strings.Join(htpasswd, "\n")
-	if strings.TrimSpace(c) != "" {
+	if htpasswd > 0 {
+		c := strings.Join(htpasswd, "\n")
 		logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
 		d := []byte(c)
 		err := ioutil.WriteFile(htpasswdFile, d, 0644)
 		if err != nil {
-			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file to: %s", err))
+			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file: %s", err))
 			return err
 		}
 		hasHtpasswd = true
