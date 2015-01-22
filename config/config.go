@@ -45,6 +45,9 @@ func loadDefaultConfig(config *Configuration) *Configuration {
 	if isZero(config.NginxConfigDirectory) {
 		config.NginxConfigDirectory = defaultNginxConfigDirectory
 	}
+	if isZero(config.NginxHtpasswdDirectory) {
+		config.NginxConfigDirectory = defaultNginxHtpasswdDirectory
+	}
 	if isZero(config.ServingDomain) {
 		config.ServingDomain = defaultServingDomain
 	}
