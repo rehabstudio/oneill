@@ -102,8 +102,8 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	// create htpasswd file
 	var hasHtpasswd bool
 	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
-	c := strings.Join(htpasswd, "\n")
-	if strings.TrimSpace(c) != "" {
+	if htpasswd > 0 {
+		c := strings.Join(htpasswd, "\n")
 		logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
 		d := []byte(c)
 		err := ioutil.WriteFile(htpasswdFile, d, 0644)
