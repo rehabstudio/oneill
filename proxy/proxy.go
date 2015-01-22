@@ -50,7 +50,7 @@ const (
             {{if .HasHtpasswd}}
             auth_basic                       "Restricted";
             auth_basic_user_file             {{.HtpasswdFile}};
-	    {{end}}
+            {{end}}
             proxy_pass                       http://{{.Subdomain}};
             proxy_set_header  Host           $http_host;   # required for docker client's sake
             proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
