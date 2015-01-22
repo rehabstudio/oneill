@@ -48,7 +48,7 @@ const (
 
           location / {
             auth_basic                       "Restricted";
-	    auth_basic_user_file             {{.HtpasswdFile}};
+            auth_basic_user_file             {{.HtpasswdFile}};
             proxy_pass                       http://{{.Subdomain}};
             proxy_set_header  Host           $http_host;   # required for docker client's sake
             proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
@@ -94,11 +94,11 @@ type templateContext struct {
 
 // WriteConfig generates an nginx config file to allow reverse proxying into running
 // containers. The template is loaded, populated with data and then written to disk.
-func WriteConfig(nginxconf_directory string, nginxhtpasswd_directory string, domain string, subdomain string, htpasswd []string, port int64) error {
+func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64) error {
 	logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
 
 	// create htpasswd file
-	htpasswdFile := path.Join(nginxhtpasswd_directory, subdomain)
+	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
 	d := []byte(strings.Join(htpasswd, "\n"))
 	err := ioutil.WriteFile(htpasswdFile, d, 0644)
 	if err != nil {
@@ -124,7 +124,7 @@ func WriteConfig(nginxconf_directory string, nginxhtpasswd_directory string, dom
 	}
 
 	// write rendered template to disk
-	err = ioutil.WriteFile(path.Join(nginxconf_directory, fmt.Sprintf("%s.conf", subdomain)), b.Bytes(), 0644)
+	err = ioutil.WriteFile(path.Join(nginxConfDirectory, fmt.Sprintf("%s.conf", subdomain)), b.Bytes(), 0644)
 	if err != nil {
 		logger.L.Error(fmt.Sprintf("Unable to write nginx config template: %s", subdomain))
 		return err
