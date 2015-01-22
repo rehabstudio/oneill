@@ -3,11 +3,12 @@ package config
 import "reflect"
 
 const (
-	defaultDefinitionsURI       string = "file:///etc/oneill/definitions"
-	defaultDockerApiEndpoint    string = "unix:///var/run/docker.sock"
-	defaultNginxConfigDirectory string = "/etc/nginx/sites-enabled"
-	defaultServingDomain        string = "example.com"
-	defaultLogLevel             int    = 2
+	defaultDefinitionsURI         string = "file:///etc/oneill/definitions"
+	defaultDockerApiEndpoint      string = "unix:///var/run/docker.sock"
+	defaultNginxConfigDirectory   string = "/etc/nginx/sites-enabled"
+	defaultNginxHtpasswdDirectory string = "/etc/nginx/htpasswd"
+	defaultServingDomain          string = "example.com"
+	defaultLogLevel               int    = 2
 )
 
 // isZero tests that a given value is the zero value for its type, this is

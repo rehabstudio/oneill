@@ -13,6 +13,11 @@ definitions_uri: "file:///etc/oneill/definitions"
 # contained within the folder if they don't match a running container.
 nginx_config_directory: "/etc/nginx/sites-enabled"
 
+# The directory to which nginx will place the generated htpasswd files. Note
+# that oneill will create dynamically generated htpasswd files in this 
+# directory so it needs to be able to write to this folder.
+nginx_htpasswd_directory: "/etc/nginx/htpasswd"
+
 # log_level controls the amount of output produced by oneill. The following
 # values are permitted:
 #
