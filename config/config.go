@@ -48,9 +48,9 @@ func loadDefaultConfig(config *Configuration) *Configuration {
 	if isZero(config.NginxHtpasswdDirectory) {
 		config.NginxConfigDirectory = defaultNginxHtpasswdDirectory
 	}
-	//if isZero(config.NginxSSLEnabled) {
-	//config.NginxSSLEnabled = defaultNginxSSLEnabled
-	//}
+	if isZero(config.NginxSSLDisabled) {
+		config.NginxSSLDisabled = defaultNginxSSLDisabled
+	}
 	if isZero(config.NginxSSLCertPath) {
 		config.NginxSSLCertPath = defaultNginxSSLCertPath
 	}

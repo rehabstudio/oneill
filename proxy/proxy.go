@@ -27,7 +27,7 @@ const (
         server {
 	  listen *:80;
 	  server_name {{.Subdomain}}.{{.Domain}};
-{{if .HasSSL }}
+{{if not .SSLDisabled }}
           return 301 https://$server_name$request_uri;
         }
 
@@ -94,7 +94,7 @@ type templateContext struct {
 	HtpasswdFile string
 	Domain       string
 	HasHtpasswd  bool
-	HasSSL       bool
+	SSLDisabled  bool
 	SSLCertPath  string
 	SSLKeyPath   string
 	Port         int64
@@ -102,7 +102,7 @@ type templateContext struct {
 
 // WriteConfig generates an nginx config file to allow reverse proxying into running
 // containers. The template is loaded, populated with data and then written to disk.
-func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64, hasSSL bool, sslCertPath string, sslKeyPath string) error {
+func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64, sslDisabled bool, sslCertPath string, sslKeyPath string) error {
 
 	// create htpasswd file
 	var hasHtpasswd bool
@@ -129,7 +129,7 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 
 	// build template context and render the template to `b`
 	var b bytes.Buffer
-	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, HasSSL: hasSSL, SSLCertPath: sslCertPath, SSLKeyPath: sslKeyPath, Domain: domain, Port: port}
+	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, SSLDisabled: sslDisabled, SSLCertPath: sslCertPath, SSLKeyPath: sslKeyPath, Domain: domain, Port: port}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
 		logger.L.Error(fmt.Sprintf("Unable to execute nginx config template: %s", subdomain))

@@ -7,7 +7,7 @@ const (
 	defaultDockerApiEndpoint      string = "unix:///var/run/docker.sock"
 	defaultNginxConfigDirectory   string = "/etc/nginx/sites-enabled"
 	defaultNginxHtpasswdDirectory string = "/etc/nginx/htpasswd"
-	defaultNginxSSLEnabled        bool   = true
+	defaultNginxSSLDisabled       bool   = false
 	defaultNginxSSLCertPath       string = "/etc/ssl/certs/labs-server.crt"
 	defaultNginxSSLKeyPath        string = "/etc/ssl/private/labs-server.pem"
 	defaultServingDomain          string = "example.com"

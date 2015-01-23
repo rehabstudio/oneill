@@ -18,6 +18,16 @@ nginx_config_directory: "/etc/nginx/sites-enabled"
 # directory so it needs to be able to write to this folder.
 nginx_htpasswd_directory: "/etc/nginx/htpasswd"
 
+# nginx_ssl_enabled effects how the vhost template is built. This accepts a 
+# bool value. Optional
+nginx_ssl_enabled: true
+
+# nginx_ssl_cert is the path to the SSL certificate. Optional
+nginx_ssl_cert: /etc/ssl/certs/labs-server.crt
+
+# nginx_ssl_key is the path to the SSL key. Optional
+nginx_ssl_key: /etc/ssl/private/labs-server.pem
+
 # log_level controls the amount of output produced by oneill. The following
 # values are permitted:
 #
