@@ -25,8 +25,9 @@ const (
         }
 
         server {
-          listen *:80;
-          server_name {{.Subdomain}}.{{.Domain}};
+	  listen *:80;
+	  server_name {{.Subdomain}}.{{.Domain}};
+{{if .HasSSL }}
           return 301 https://$server_name$request_uri;
         }
 
@@ -35,11 +36,12 @@ const (
           server_name {{.Subdomain}}.{{.Domain}};
 
           ssl on;
-          ssl_certificate /etc/ssl/certs/labs-server.crt;
-          ssl_certificate_key /etc/ssl/private/labs-server.pem;
+          ssl_certificate {{.SSLCertPath}};
+          ssl_certificate_key {{.SSLKeyPath}};
           ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
           ssl_session_timeout 5m;
           ssl_session_cache shared:SSL:5m;
+{{end}}
 
           client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads
 
@@ -92,12 +94,15 @@ type templateContext struct {
 	HtpasswdFile string
 	Domain       string
 	HasHtpasswd  bool
+	HasSSL       bool
+	SSLCertPath  string
+	SSLKeyPath   string
 	Port         int64
 }
 
 // WriteConfig generates an nginx config file to allow reverse proxying into running
 // containers. The template is loaded, populated with data and then written to disk.
-func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64) error {
+func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64, hasSSL bool, sslCertPath string, sslKeyPath string) error {
 
 	// create htpasswd file
 	var hasHtpasswd bool
@@ -124,7 +129,7 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 
 	// build template context and render the template to `b`
 	var b bytes.Buffer
-	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, Domain: domain, Port: port}
+	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, HasSSL: hasSSL, SSLCertPath: sslCertPath, SSLKeyPath: sslKeyPath, Domain: domain, Port: port}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
 		logger.L.Error(fmt.Sprintf("Unable to execute nginx config template: %s", subdomain))

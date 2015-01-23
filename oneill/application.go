@@ -116,7 +116,7 @@ func (a *Application) RunApplication() error {
 			continue
 		}
 		// write proxy (nginx) configuration file to disk
-		proxy.WriteConfig(a.config.NginxConfigDirectory, a.config.NginxHtpasswdDirectory, a.config.ServingDomain, cd.Subdomain, cd.Htpasswd, port)
+		proxy.WriteConfig(a.config.NginxConfigDirectory, a.config.NginxHtpasswdDirectory, a.config.ServingDomain, cd.Subdomain, cd.Htpasswd, port, a.config.NginxSSLEnabled, a.config.NginxSSLCertPath, a.config.NginxSSLKeyPath)
 	}
 
 	// finally, reload the proxy server by sending a HUP signal, this performs a hotreload without

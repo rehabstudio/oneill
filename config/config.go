@@ -48,6 +48,15 @@ func loadDefaultConfig(config *Configuration) *Configuration {
 	if isZero(config.NginxHtpasswdDirectory) {
 		config.NginxConfigDirectory = defaultNginxHtpasswdDirectory
 	}
+	//if isZero(config.NginxSSLEnabled) {
+	//config.NginxSSLEnabled = defaultNginxSSLEnabled
+	//}
+	if isZero(config.NginxSSLCertPath) {
+		config.NginxSSLCertPath = defaultNginxSSLCertPath
+	}
+	if isZero(config.NginxSSLKeyPath) {
+		config.NginxSSLKeyPath = defaultNginxSSLKeyPath
+	}
 	if isZero(config.ServingDomain) {
 		config.ServingDomain = defaultServingDomain
 	}
