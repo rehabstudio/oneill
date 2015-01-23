@@ -25,8 +25,8 @@ const (
         }
 
         server {
-	  listen *:80;
-	  server_name {{.Subdomain}}.{{.Domain}};
+          listen *:80;
+          server_name {{.Subdomain}}.{{.Domain}};
 {{if not .SSLDisabled }}
           return 301 https://$server_name$request_uri;
         }
