@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/rehabstudio/oneill/application"
 	"github.com/rehabstudio/oneill/config"
 	"github.com/rehabstudio/oneill/containers"
 	"github.com/rehabstudio/oneill/definitions"
 	"github.com/rehabstudio/oneill/logger"
-	"github.com/rehabstudio/oneill/oneill"
 )
 
 // exitOnError checks that an error is not nil. If the passed value is an
@@ -44,7 +44,7 @@ func main() {
 	exitOnError(err, "Unable to load container definitions")
 
 	// initialise a new Application instance and start it
-	application := oneill.NewApplication(config, dockerClient, definitions)
+	application := application.NewApplication(config, dockerClient, definitions)
 	exitOnError(application.RunApplication(), "Critical runtime error")
 
 }

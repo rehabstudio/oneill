@@ -1,4 +1,4 @@
-package oneill
+package application
 
 import (
 	"fmt"
