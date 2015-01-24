@@ -105,3 +105,25 @@ $ oneill
 # run oneill with a custom config file
 $ oneill -config=/home/me/my_oneill_config.yaml
 ```
+
+
+## Building from source
+
+oneill uses `godep` to manage its dependencies. Provided you have `godep`
+installed and the repository is cloned into your `$GOPATH`, building oneill
+locally should be as simple as:
+
+```bash
+$ godep go build
+```
+
+
+## Building with docker
+
+If you've got docker installed and are running Linux (it might work on OSX, i
+just haven't tried), you can use the included script to build (and test)
+oneill:
+
+```bash
+$ ./build.sh docker
+```
