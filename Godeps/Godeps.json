@@ -1,0 +1,63 @@
+{
+	"ImportPath": "github.com/rehabstudio/oneill",
+	"GoVersion": "go1.2.1",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.6.4-4-g844911c",
+			"Rev": "844911ce078544c0d950b86ef09e6d19270ed33a"
+		},
+		{
+			"ImportPath": "github.com/andrew-d/go-termutil",
+			"Rev": "91702f30b7f6d63f574b486457bae6acb1534dce"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/archive",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/fileutils",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/ioutils",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/pools",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/promise",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
+			"Comment": "v1.4.1-675-gd3a6a53",
+			"Rev": "d3a6a53fa5d399ed0d728e48eed8ea38bca9dc2c"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Rev": "d19717788084716e4adff0515be6289aa04bec46"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "5d6f7e02b7cdad63b06ab3877915532cd30073b4"
+		}
+	]
+}
