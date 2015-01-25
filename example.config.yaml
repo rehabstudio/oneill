@@ -3,7 +3,7 @@
 #####################################
 
 # This file shows all possible settings keys with explanations on the use of
-# each one.
+# each one. The default value for each key is shown.
 
 # see README.md for explanation of appropriate values for `definitions_uri`
 definitions_uri: "file:///etc/oneill/definitions"
@@ -14,24 +14,21 @@ definitions_uri: "file:///etc/oneill/definitions"
 nginx_config_directory: "/etc/nginx/sites-enabled"
 
 # The directory to which nginx will place the generated htpasswd files. Note
-# that oneill will create dynamically generated htpasswd files in this 
+# that oneill will create dynamically generated htpasswd files in this
 # directory so it needs to be able to write to this folder.
 nginx_htpasswd_directory: "/etc/nginx/htpasswd"
 
-# nginx_ssl_disabled effects how the vhost template is built. This accepts a 
-# bool value. Defaults defined in `./config/defaults.go`
-# [Optional]
-#nginx_ssl_disabled: true
+# If true, no SSL related configuration will be included in the vhost
+# configuration files generated for use with nginx.
+nginx_ssl_disabled: false
 
-# nginx_ssl_cert is the path to the SSL certificate. Defaults defined in 
-# `./config/defaults.go`
-# [Optional]
-#nginx_ssl_cert: /etc/ssl/certs/labs-server.crt
+# nginx_ssl_cert is the path to the SSL certificate bundle. Required if
+# nginx_ssl_disabled is false.
+nginx_ssl_cert: /etc/ssl/certs/oneill.crt
 
-# nginx_ssl_key is the path to the SSL key. Defaults defined in 
-# `./config/defaults.go`
-# [Optional]
-#nginx_ssl_key: /etc/ssl/private/labs-server.pem
+# nginx_ssl_key is the path to the SSL private key file. Required if
+# nginx_ssl_disabled is false.
+nginx_ssl_key: /etc/ssl/private/oneill.pem
 
 # log_level controls the amount of output produced by oneill. The following
 # values are permitted:
@@ -40,18 +37,13 @@ nginx_htpasswd_directory: "/etc/nginx/htpasswd"
 # 2: INFO
 # 3: WARNING
 # 4: ERROR
-log_level: 1
+log_level: 2
 
 # The domain specified here will be used when generating nginx configuration
 # files for the containers. This should be a valid domain name/hostname that
 # resolves to the system running oneill. If you want subdomains created by
 # oneill to work automatically you should create a `*.example.com` DNS A
 # record pointing at the server running oneill.
-#
-# Note: at the moment, oneill expects to be running on a server with a working
-# nginx setup with valid SSL certificates in place. Changes are planned which
-# should allow oneill to work without https and on localhost (with proper
-# routing for testing purposes).
 serving_domain: example.com
 
 # registry_credentials is a map in which you can specify login details for any
@@ -60,6 +52,9 @@ serving_domain: example.com
 # (without scheme) of the registry, the values should be another map
 # containing both the username and password that should be used for each
 # registry.
+#
+# Note: There are no default values provided for registry credentials, but an
+# example is shown below.
 registry_credentials:
     registry.example.com:
         username: user@example.com

@@ -8,8 +8,8 @@ const (
 	defaultNginxConfigDirectory   string = "/etc/nginx/sites-enabled"
 	defaultNginxHtpasswdDirectory string = "/etc/nginx/htpasswd"
 	defaultNginxSSLDisabled       bool   = false
-	defaultNginxSSLCertPath       string = "/etc/ssl/certs/labs-server.crt"
-	defaultNginxSSLKeyPath        string = "/etc/ssl/private/labs-server.pem"
+	defaultNginxSSLCertPath       string = "/etc/ssl/certs/oneill.crt"
+	defaultNginxSSLKeyPath        string = "/etc/ssl/private/oneill.pem"
 	defaultServingDomain          string = "example.com"
 	defaultLogLevel               int    = 2
 )
