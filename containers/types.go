@@ -19,9 +19,3 @@ type Client interface {
 	RemoveContainer(docker.APIContainers) error
 	StartContainer(string, string, string, []string) error
 }
-
-type ContainerDefinition struct {
-	Subdomain string `yaml:"subdomain"`
-	Container string `yaml:"container"`
-	Tag       string `yaml:"tag"`
-}

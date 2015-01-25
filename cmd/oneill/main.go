@@ -18,7 +18,7 @@ import (
 // error, it is logged and the program exits with an error code of 1
 func exitOnError(err error, prefix string) {
 	if err != nil {
-		fmt.Printf("%s [FATAL]: %s\n", time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), err)
+		fmt.Printf("%s [FATAL]: %s: %s\n", time.Now().UTC().Format("2006-01-02T15:04:05.000Z"), prefix, err)
 		os.Exit(1)
 	}
 }
