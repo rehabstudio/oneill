@@ -1,7 +1,8 @@
 oneill
 ======
 
-oneill is a small tool that manages a set of docker containers running on a single host.
+oneill is a small tool that manages a set of docker containers running on a
+single host, exposing them to the internet using Nginx as a reverse proxy.
 
 
 ## How it works
