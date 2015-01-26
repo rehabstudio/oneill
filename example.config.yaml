@@ -31,13 +31,8 @@ nginx_ssl_cert: /etc/ssl/certs/oneill.crt
 nginx_ssl_key: /etc/ssl/private/oneill.pem
 
 # log_level controls the amount of output produced by oneill. The following
-# values are permitted:
-#
-# 1: DEBUG
-# 2: INFO
-# 3: WARNING
-# 4: ERROR
-log_level: 2
+# values are permitted: debug, info, warning, error, fatal, panic
+log_level: info
 
 # The domain specified here will be used when generating nginx configuration
 # files for the containers. This should be a valid domain name/hostname that

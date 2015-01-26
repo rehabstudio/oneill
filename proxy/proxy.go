@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/rehabstudio/oneill/logger"
+	"github.com/Sirupsen/logrus"
 )
 
 const (
@@ -109,21 +109,31 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
 	if len(htpasswd) > 0 {
 		c := strings.Join(htpasswd, "\n")
-		logger.L.Debug(fmt.Sprintf("Writing htpasswd file for %s.%s", subdomain, domain))
+		logrus.WithFields(logrus.Fields{
+			"subdomain": subdomain,
+			"domain":    domain,
+		}).Debug("Writing htpasswd file")
 		d := []byte(c)
 		err := ioutil.WriteFile(htpasswdFile, d, 0644)
 		if err != nil {
-			logger.L.Error(fmt.Sprintf("Something went wrong while trying to write the htpasswd file: %s", err))
+			logrus.WithFields(logrus.Fields{
+				"err": err,
+			}).Error("Something went wrong while trying to write the htpasswd file")
 			return err
 		}
 		hasHtpasswd = true
 	}
 
-	logger.L.Debug(fmt.Sprintf("Writing nginx configuration for %s.%s", subdomain, domain))
+	logrus.WithFields(logrus.Fields{
+		"subdomain": subdomain,
+		"domain":    domain,
+	}).Debug("Writing nginx configuration")
 
 	tmpl, err := template.New("nginx-config").Parse(nginxTemplate)
 	if err != nil {
-		logger.L.Error(fmt.Sprintf("Unable to load nginx config template: %s", subdomain))
+		logrus.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("Unable to load nginx config template")
 		return err
 	}
 
@@ -132,14 +142,18 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, SSLDisabled: sslDisabled, SSLCertPath: sslCertPath, SSLKeyPath: sslKeyPath, Domain: domain, Port: port}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
-		logger.L.Error(fmt.Sprintf("Unable to execute nginx config template: %s", subdomain))
+		logrus.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("Unable to execute nginx config template")
 		return err
 	}
 
 	// write rendered template to disk
 	err = ioutil.WriteFile(path.Join(nginxConfDirectory, fmt.Sprintf("%s.conf", subdomain)), b.Bytes(), 0644)
 	if err != nil {
-		logger.L.Error(fmt.Sprintf("Unable to write nginx config template: %s", subdomain))
+		logrus.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("Unable to write nginx config template")
 		return err
 	}
 

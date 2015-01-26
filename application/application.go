@@ -1,12 +1,11 @@
 package application
 
 import (
-	"fmt"
+	"github.com/Sirupsen/logrus"
 
 	"github.com/rehabstudio/oneill/config"
 	"github.com/rehabstudio/oneill/containers"
 	"github.com/rehabstudio/oneill/definitions"
-	"github.com/rehabstudio/oneill/logger"
 	"github.com/rehabstudio/oneill/proxy"
 )
 
@@ -17,7 +16,7 @@ type Application struct {
 }
 
 func NewApplication(c *config.Configuration, dc containers.Client, cds []*definitions.ContainerDefinition) *Application {
-	logger.L.Debug("Initialising oneill instance")
+	logrus.Debug("Initialising oneill instance")
 
 	// initialise new application struct
 	app := Application{
@@ -37,7 +36,7 @@ func (a *Application) RunApplication() error {
 	// pull latest docker image/tag for each container definition, we don't
 	// *really* care if this passes or fails, so long as at the next step
 	// there's at least one container matching the definition
-	logger.L.Debug("Pulling latest images for all configured containers")
+	logrus.Debug("Pulling latest images for all configured containers")
 	for _, cd := range a.containerDefinitions {
 		a.dockerClient.PullImage(cd.Image, cd.Tag)
 	}
@@ -50,13 +49,21 @@ func (a *Application) RunApplication() error {
 		// have been pulled in the last step)
 		image, err := a.dockerClient.LoadImage(cd.Image, cd.Tag)
 		if err != nil {
-			logger.L.Warning(fmt.Sprintf("Unable to find image, skipping: %s (%s:%s)", cd.Subdomain, cd.Image, cd.Tag))
+			logrus.WithFields(logrus.Fields{
+				"definition": cd.Subdomain,
+				"image":      cd.Image,
+				"tag":        cd.Tag,
+			}).Warning("Unable to find image, skipping")
 			delete(a.containerDefinitions, k)
 			continue
 		}
 		// check that the image exposes exactly 1 port.
 		if !a.dockerClient.CheckOnlyOnePort(image) {
-			logger.L.Warning(fmt.Sprintf("Image does not expose a single port, skipping: %s (%s:%s)", cd.Subdomain, cd.Image, cd.Tag))
+			logrus.WithFields(logrus.Fields{
+				"definition": cd.Subdomain,
+				"image":      cd.Image,
+				"tag":        cd.Tag,
+			}).Warning("Image does not expose a single port, skipping")
 			delete(a.containerDefinitions, k)
 			continue
 		}
@@ -67,7 +74,7 @@ func (a *Application) RunApplication() error {
 	// is found, the container will be stopped and forcibly removed. This means
 	// that until (if) persistent volume support is implemented any docker containers
 	// created by oneill will only have ephemeral filesystem storage.
-	logger.L.Debug("Removing containers that don't match any valid definition")
+	logrus.Debug("Removing containers that don't match any valid definition")
 	containers, err := a.dockerClient.ListContainers()
 	if err != nil {
 		return err
@@ -79,7 +86,7 @@ func (a *Application) RunApplication() error {
 	}
 
 	// iterate over all active container definitions, ensuring that a container is started for each one.
-	logger.L.Debug("Ensure a container is running for each valid definition")
+	logrus.Debug("Ensure a container is running for each valid definition")
 	for _, cd := range a.containerDefinitions {
 		// if a container is already running for the given name then skip forward to the next definition
 		if a.dockerClient.ContainerRunning(cd.Subdomain) {
@@ -90,7 +97,7 @@ func (a *Application) RunApplication() error {
 	}
 
 	// Clear out any existing files in the directory
-	logger.L.Debug("Removing all existing reverse proxy configuration")
+	logrus.Debug("Removing all existing reverse proxy configuration")
 	err = proxy.ClearConfigDirectory(a.config.NginxConfigDirectory)
 	// exit if this fails because it means we probably can't manage
 	// the directory, so we won't try
@@ -121,10 +128,10 @@ func (a *Application) RunApplication() error {
 
 	// finally, reload the proxy server by sending a HUP signal, this performs a hotreload without
 	// any downtime due to configuration loading
-	logger.L.Debug("Reloading reverse proxy configuration")
+	logrus.Debug("Reloading reverse proxy configuration")
 	err = proxy.ReloadServer()
 	if err != nil {
-		logger.L.Warning("Unable to reload nginx configuration")
+		logrus.Warning("Unable to reload nginx configuration")
 	}
 
 	return nil

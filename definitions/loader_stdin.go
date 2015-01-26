@@ -4,9 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-
-	"github.com/rehabstudio/oneill/logger"
 )
 
 type LoaderStdin struct{}
@@ -18,7 +17,10 @@ func (l *LoaderStdin) ValidateURI() error {
 
 // LoadContainerDefinitions reads  yaml or json data from stdin.
 func (l *LoaderStdin) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
-	logger.L.Debug("Loading container definitions: stdin")
+	logrus.WithFields(logrus.Fields{
+		"source": "stdin",
+		"path":   nil,
+	}).Debug("Loading container definitions")
 
 	var cd []*ContainerDefinition
 
