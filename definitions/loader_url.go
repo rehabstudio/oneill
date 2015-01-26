@@ -4,9 +4,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-
-	"github.com/rehabstudio/oneill/logger"
 )
 
 type LoaderURL struct {
@@ -21,7 +20,10 @@ func (l *LoaderURL) ValidateURI() error {
 // definitions in yaml or json format, loads them into memory and unmarshalls them
 // into ContainerDefinition structs.
 func (l *LoaderURL) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
-	logger.L.Debug("Loading container definitions: remote URL")
+	logrus.WithFields(logrus.Fields{
+		"source": "url",
+		"path":   l.url,
+	}).Debug("Loading container definitions")
 
 	var cd []*ContainerDefinition
 

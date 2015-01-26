@@ -5,11 +5,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/fsouza/go-dockerclient"
 
 	"github.com/rehabstudio/oneill/config"
 	"github.com/rehabstudio/oneill/definitions"
-	"github.com/rehabstudio/oneill/logger"
 )
 
 type dockerClient struct {
@@ -87,14 +87,20 @@ func (d *dockerClient) ContainerShouldBeRunning(container docker.APIContainers, 
 	containerName := strings.TrimPrefix(container.Names[0], "/")
 	definition, ok := definitions[containerName]
 	if !ok {
-		logger.L.Debug(fmt.Sprintf("Container does not match any valid definition: %s", containerName))
+		logrus.WithFields(logrus.Fields{
+			"definition": containerName,
+		}).Debug("Container does not match any valid definition")
 		return false
 	}
 
 	// check that the container is actually running
 	runningContainer := d.getContainerByID(container.ID)
 	if !runningContainer.State.Running {
-		logger.L.Debug(fmt.Sprintf("Container is not running: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
+		logrus.WithFields(logrus.Fields{
+			"definition": definition.Subdomain,
+			"image":      definition.Image,
+			"tag":        definition.Tag,
+		}).Debug("Container is not running")
 		return false
 	}
 
@@ -102,21 +108,33 @@ func (d *dockerClient) ContainerShouldBeRunning(container docker.APIContainers, 
 	// probably a bit paranoid, but performance isn't critical here)
 	availableImage, err := d.LoadImage(definition.Image, definition.Tag)
 	if err != nil {
-		logger.L.Debug(fmt.Sprintf("Image with tag not found locally: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
+		logrus.WithFields(logrus.Fields{
+			"definition": definition.Subdomain,
+			"image":      definition.Image,
+			"tag":        definition.Tag,
+		}).Debug("Image with tag not found locally")
 		return false
 	}
 
 	// check that the image running is the latest that's available locally
 	if runningContainer.Image != availableImage.ID {
 		// container running but out-of date
-		logger.L.Debug(fmt.Sprintf("Running container is not running the latest image: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
+		logrus.WithFields(logrus.Fields{
+			"definition": definition.Subdomain,
+			"image":      definition.Image,
+			"tag":        definition.Tag,
+		}).Debug("Running container is not running the latest image")
 		return false
 	}
 
 	// check that the running container's environment matches the one in
 	// the container definition
 	if !envsMatch(definition.Env, runningContainer.Config.Env, availableImage.Config.Env) {
-		logger.L.Debug(fmt.Sprintf("Environments do not match: %s (%s:%s)", definition.Subdomain, definition.Image, definition.Tag))
+		logrus.WithFields(logrus.Fields{
+			"definition": definition.Subdomain,
+			"image":      definition.Image,
+			"tag":        definition.Tag,
+		}).Debug("Environments do not match")
 		return false
 	}
 
@@ -182,7 +200,10 @@ func parseRegistryFromImageName(image string) string {
 }
 
 func (d *dockerClient) PullImage(image string, tag string) error {
-	logger.L.Debug(fmt.Sprintf("Pulling docker image: %s:%s", image, tag))
+	logrus.WithFields(logrus.Fields{
+		"image": image,
+		"tag":   tag,
+	}).Debug("Pulling docker image")
 
 	// configuration options that get passed to client.PullImage
 	pullImageOptions := docker.PullImageOptions{Repository: image, Tag: tag}
@@ -195,7 +216,9 @@ func (d *dockerClient) PullImage(image string, tag string) error {
 }
 
 func (d *dockerClient) RemoveContainer(container docker.APIContainers) error {
-	logger.L.Info(fmt.Sprintf("Removing docker container: %s", strings.TrimPrefix(container.Names[0], "/")))
+	logrus.WithFields(logrus.Fields{
+		"container": strings.TrimPrefix(container.Names[0], "/"),
+	}).Info("Removing docker container")
 
 	removeContainerOptions := docker.RemoveContainerOptions{
 		ID:            container.ID,
@@ -207,7 +230,11 @@ func (d *dockerClient) RemoveContainer(container docker.APIContainers) error {
 }
 
 func (d *dockerClient) StartContainer(subdomain, image, tag string, env []string) error {
-	logger.L.Info(fmt.Sprintf("Starting docker container: %s (%s:%s)", subdomain, image, tag))
+	logrus.WithFields(logrus.Fields{
+		"subdomain": subdomain,
+		"image":     image,
+		"tag":       tag,
+	}).Info("Starting docker container")
 
 	hostConfig := docker.HostConfig{PublishAllPorts: true, RestartPolicy: docker.RestartOnFailure(10)}
 	createContainerOptions := docker.CreateContainerOptions{

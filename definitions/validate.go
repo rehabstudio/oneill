@@ -5,7 +5,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/rehabstudio/oneill/logger"
+	"github.com/Sirupsen/logrus"
 )
 
 var (
@@ -39,22 +39,32 @@ func definitionIsUnique(cd *ContainerDefinition, cds []*ContainerDefinition) boo
 }
 
 func validateDefinition(cd *ContainerDefinition, cds []*ContainerDefinition) bool {
-	logger.L.Debug(fmt.Sprintf("Validating container definition: %s", cd.Subdomain))
+	logrus.WithFields(logrus.Fields{
+		"definition": cd.Subdomain,
+	}).Debug("Validating container definition")
 
 	if len(cd.Subdomain) < 3 {
-		logger.L.Warning(fmt.Sprintf("%s is not long enough (must be at least 3 characters long)", cd.Subdomain))
+		logrus.WithFields(logrus.Fields{
+			"definition": cd.Subdomain,
+		}).Warning("`Subdomain` not long enough (must be at least 3 characters long)")
 		return false
 	}
 	if cd.Image == "" {
-		logger.L.Warning(fmt.Sprintf("`Image` cannot be blank in container definition: %s", cd.Subdomain))
+		logrus.WithFields(logrus.Fields{
+			"definition": cd.Subdomain,
+		}).Warning("`Image` cannot be blank in container definition")
 		return false
 	}
 	if !rxContainerName.MatchString(cd.Subdomain) {
-		logger.L.Warning(fmt.Sprintf("%s is not a valid container name", cd.Subdomain))
+		logrus.WithFields(logrus.Fields{
+			"definition": cd.Subdomain,
+		}).Warning("Not a valid container name/subdomain")
 		return false
 	}
 	if !definitionIsUnique(cd, cds) {
-		logger.L.Warning(fmt.Sprintf("%s is not unique", cd.Subdomain))
+		logrus.WithFields(logrus.Fields{
+			"definition": cd.Subdomain,
+		}).Warning("`Subdomain` must be unique")
 		return false
 	}
 

@@ -5,9 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-
-	"github.com/rehabstudio/oneill/logger"
 )
 
 type LoaderFile struct {
@@ -33,7 +32,10 @@ func (l *LoaderFile) ValidateURI() error {
 // LoadContainerDefinitions reads a local yaml or json file for container definitions,
 // loads them into memory and unmarshalls them into ContainerDefinition structs.
 func (l *LoaderFile) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
-	logger.L.Debug("Loading container definitions: single file")
+	logrus.WithFields(logrus.Fields{
+		"source": "file",
+		"path":   l.path,
+	}).Debug("Loading container definitions")
 
 	var cd []*ContainerDefinition
 

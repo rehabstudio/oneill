@@ -1,15 +1,13 @@
 package definitions
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-
-	"github.com/rehabstudio/oneill/logger"
 )
 
 type LoaderDirectory struct {
@@ -24,7 +22,10 @@ func (l *LoaderDirectory) ValidateURI() error {
 // for container definitions, reads them into memory and unmarshalls them into ContainerDefinition
 // structs. This scan is not recursive and will not search subdirectories for definitions.
 func (l *LoaderDirectory) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
-	logger.L.Debug("Loading container definitions: single directory")
+	logrus.WithFields(logrus.Fields{
+		"source": "directory",
+		"path":   l.rootDirectory,
+	}).Debug("Loading container definitions")
 
 	var cds []*ContainerDefinition
 
@@ -46,7 +47,7 @@ func (l *LoaderDirectory) LoadContainerDefinitions() ([]*ContainerDefinition, er
 			if err != nil {
 				continue
 			}
-			logger.L.Debug(fmt.Sprintf("Found container definition: %s", cdPath))
+			logrus.WithFields(logrus.Fields{"path": cdPath}).Debug("Found container definition")
 			cds = append(cds, cd)
 		}
 	}
