@@ -33,49 +33,63 @@ func loadConfigFromBytes(data []byte) (cd *Configuration, err error) {
 	return cd, nil
 }
 
-// loadDefaultConfig initialises a config struct and populates it with default values
-func loadDefaultConfig(config *Configuration) *Configuration {
+// mergeConfigs takes an arbitrary number of configuration structs, iterating
+// over them, replacing any "zero" value in the previous struct with a
+// non-zero value from the next.
+func mergeConfigs(configs ...*Configuration) *Configuration {
+	newConfig := &Configuration{}
+	for _, config := range configs {
+		if !isZero(config.DefinitionsURI) {
+			newConfig.DefinitionsURI = config.DefinitionsURI
+		}
+		if !isZero(config.DockerApiEndpoint) {
+			newConfig.DockerApiEndpoint = config.DockerApiEndpoint
+		}
+		if !isZero(config.LogLevel) {
+			newConfig.LogLevel = config.LogLevel
+		}
+		if !isZero(config.NginxConfigDirectory) {
+			newConfig.NginxConfigDirectory = config.NginxConfigDirectory
+		}
+		if !isZero(config.NginxHtpasswdDirectory) {
+			newConfig.NginxHtpasswdDirectory = config.NginxHtpasswdDirectory
+		}
+		if !isZero(config.NginxSSLCertPath) {
+			newConfig.NginxSSLCertPath = config.NginxSSLCertPath
+		}
+		if !isZero(config.NginxSSLDisabled) {
+			newConfig.NginxSSLDisabled = config.NginxSSLDisabled
+		}
+		if !isZero(config.NginxSSLKeyPath) {
+			newConfig.NginxSSLKeyPath = config.NginxSSLKeyPath
+		}
+		if !isZero(config.RegistryCredentials) {
+			newConfig.RegistryCredentials = config.RegistryCredentials
+		}
+		if !isZero(config.ServingDomain) {
+			newConfig.ServingDomain = config.ServingDomain
+		}
+	}
 
-	if isZero(config.DefinitionsURI) {
-		config.DefinitionsURI = defaultDefinitionsURI
-	}
-	if isZero(config.DockerApiEndpoint) {
-		config.DockerApiEndpoint = defaultDockerApiEndpoint
-	}
-	if isZero(config.NginxConfigDirectory) {
-		config.NginxConfigDirectory = defaultNginxConfigDirectory
-	}
-	if isZero(config.NginxHtpasswdDirectory) {
-		config.NginxConfigDirectory = defaultNginxHtpasswdDirectory
-	}
-	if isZero(config.NginxSSLDisabled) {
-		config.NginxSSLDisabled = defaultNginxSSLDisabled
-	}
-	if isZero(config.NginxSSLCertPath) {
-		config.NginxSSLCertPath = defaultNginxSSLCertPath
-	}
-	if isZero(config.NginxSSLKeyPath) {
-		config.NginxSSLKeyPath = defaultNginxSSLKeyPath
-	}
-	if isZero(config.ServingDomain) {
-		config.ServingDomain = defaultServingDomain
-	}
-	if isZero(config.LogLevel) {
-		config.LogLevel = defaultLogLevel
-	}
-
-	return config
+	return newConfig
 }
 
 // loadConfig initialises a default config then overrides the default values
 // with values from the specified configuration file
 func loadConfig(configFilePath string) (*Configuration, error) {
 
-	// read configuration file from disk and unmarshall
-	config, err := loadConfigFromDisk(configFilePath)
-
 	// load default configuration
-	config = loadDefaultConfig(config)
+	defaultConfig := loadDefaultConfig()
+
+	// read configuration file from disk and unmarshall
+	diskConfig, err := loadConfigFromDisk(configFilePath)
+	if err != nil {
+		return &Configuration{}, err
+	}
+
+	// merge user config with default config to get effective configuration
+	// for this instance of the application.
+	config := mergeConfigs(defaultConfig, diskConfig)
 
 	return config, err
 }
@@ -85,14 +99,9 @@ func loadConfig(configFilePath string) (*Configuration, error) {
 func LoadConfig() (*Configuration, error) {
 
 	// parse config file location from command line flag
-	configFile := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
+	configFilePath := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
 	flag.Parse()
 
 	// load config from disk into global struct
-	config, err := loadConfig(*configFile)
-	if err != nil {
-		return config, err
-	}
-	return config, nil
-
+	return loadConfig(*configFilePath)
 }

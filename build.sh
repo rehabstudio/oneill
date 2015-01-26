@@ -21,7 +21,7 @@ EOUSAGE
 }
 
 local_build() {
-    godep go test -a ./...
+    godep go test -a -cover ./...
     godep go build -a
     if [ -n $2 ]; then
         chown $2:$2 oneill

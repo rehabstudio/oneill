@@ -2,17 +2,23 @@ package config
 
 import "reflect"
 
-const (
-	defaultDefinitionsURI         string = "file:///etc/oneill/definitions"
-	defaultDockerApiEndpoint      string = "unix:///var/run/docker.sock"
-	defaultNginxConfigDirectory   string = "/etc/nginx/sites-enabled"
-	defaultNginxHtpasswdDirectory string = "/etc/nginx/htpasswd"
-	defaultNginxSSLDisabled       bool   = false
-	defaultNginxSSLCertPath       string = "/etc/ssl/certs/oneill.crt"
-	defaultNginxSSLKeyPath        string = "/etc/ssl/private/oneill.pem"
-	defaultServingDomain          string = "example.com"
-	defaultLogLevel               int    = 2
-)
+// loadDefaultConfig initialises a config struct and populates it with default values
+func loadDefaultConfig() *Configuration {
+
+	config := &Configuration{
+		LogLevel:               2,
+		DefinitionsURI:         "file:///etc/oneill/definitions",
+		DockerApiEndpoint:      "unix:///var/run/docker.sock",
+		NginxConfigDirectory:   "/etc/nginx/sites-enabled",
+		NginxHtpasswdDirectory: "/etc/nginx/htpasswd",
+		ServingDomain:          "example.com",
+		NginxSSLDisabled:       false,
+		NginxSSLCertPath:       "/etc/ssl/certs/oneill.crt",
+		NginxSSLKeyPath:        "/etc/ssl/private/oneill.pem",
+	}
+
+	return config
+}
 
 // isZero tests that a given value is the zero value for its type, this is
 // used to decide when to set default config values
