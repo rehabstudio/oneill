@@ -13,59 +13,6 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-const (
-	nginxTemplate string = `
-        upstream {{.Subdomain}} {
-          server localhost:{{.Port}};
-        }
-
-        map $http_upgrade $connection_upgrade {
-            default upgrade;
-            ''      close;
-        }
-
-        server {
-          listen *:80;
-          server_name {{.Subdomain}}.{{.Domain}};
-{{if not .SSLDisabled }}
-          return 301 https://$server_name$request_uri;
-        }
-
-        server {
-          listen 443;
-          server_name {{.Subdomain}}.{{.Domain}};
-
-          ssl on;
-          ssl_certificate {{.SSLCertPath}};
-          ssl_certificate_key {{.SSLKeyPath}};
-          ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
-          ssl_session_timeout 5m;
-          ssl_session_cache shared:SSL:5m;
-{{end}}
-
-          client_max_body_size 0; # disable any limits to avoid HTTP 413 for large image uploads
-
-          # required to avoid HTTP 411: see Issue #1486 (https://github.com/docker/docker/issues/1486)
-          chunked_transfer_encoding on;
-
-          location / {
-            {{if .HasHtpasswd}}
-            auth_basic                       "Restricted";
-            auth_basic_user_file             {{.HtpasswdFile}};
-            {{end}}
-            proxy_pass                       http://{{.Subdomain}};
-            proxy_set_header  Host           $http_host;   # required for docker client's sake
-            proxy_set_header  X-Real-IP      $remote_addr; # pass on real client's IP
-            proxy_read_timeout               900;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
-          }
-
-        }
-`
-)
-
 // ClearConfigDirectory ensures an empty directory exists in which to save our configuration files.
 func ClearConfigDirectory(directory string) error {
 
@@ -129,7 +76,14 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 		"domain":    domain,
 	}).Debug("Writing nginx configuration")
 
-	tmpl, err := template.New("nginx-config").Parse(nginxTemplate)
+	nginxTemplate, err := Asset("templates/reverse_proxy.tmpl")
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"err": err,
+		}).Error("Unable to load nginx config template")
+		return err
+	}
+	tmpl, err := template.New("nginx-config").Parse(string(nginxTemplate[:]))
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err": err,

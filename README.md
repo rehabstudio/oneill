@@ -110,11 +110,15 @@ $ oneill -config=/home/me/my_oneill_config.yaml
 
 ## Building from source
 
+oneill uses `go-bindata` to embed some assets into the built binary, you'll
+need to have this installed before you're able to build the application.
+
 oneill uses `godep` to manage its dependencies. Provided you have `godep`
 installed and the repository is cloned into your `$GOPATH`, building oneill
 locally should be as simple as:
 
 ```bash
+$ go-bindata -o proxy/bindata.go -pkg=proxy -prefix=proxy/ proxy/templates/
 $ godep go build
 ```
 

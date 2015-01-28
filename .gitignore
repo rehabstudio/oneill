@@ -1,2 +1,3 @@
 config.yaml
 oneill
+proxy/bindata.go

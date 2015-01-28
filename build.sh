@@ -21,7 +21,17 @@ EOUSAGE
 }
 
 local_build() {
+
+    # build templates into go source code for embedding in our binary
+    go-bindata -o proxy/bindata.go -pkg=proxy -prefix=proxy/ proxy/templates/
+    if [ -n $2 ]; then
+        chown $2:$2 proxy/bindata.go
+    fi
+
+    # run the application's tests before building
     godep go test -a -cover ./...
+
+    # build the application and output a binary
     godep go build -a
     if [ -n $2 ]; then
         chown $2:$2 oneill
