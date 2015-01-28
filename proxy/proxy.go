@@ -12,6 +12,9 @@ import (
 	"text/template"
 
 	"github.com/Sirupsen/logrus"
+
+	"github.com/rehabstudio/oneill/config"
+	"github.com/rehabstudio/oneill/definitions"
 )
 
 // ClearConfigDirectory ensures an empty directory exists in which to save our configuration files.
@@ -60,16 +63,16 @@ type templateContext struct {
 
 // WriteConfig generates an nginx config file to allow reverse proxying into running
 // containers. The template is loaded, populated with data and then written to disk.
-func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domain string, subdomain string, htpasswd []string, port int64, sslDisabled bool, sslCertPath string, sslKeyPath string) error {
+func WriteConfig(conf *config.Configuration, def *definitions.ContainerDefinition, port int64) error {
 
 	// create htpasswd file
 	var hasHtpasswd bool
-	htpasswdFile := path.Join(nginxHtpasswdDirectory, subdomain)
-	if len(htpasswd) > 0 {
-		c := strings.Join(htpasswd, "\n")
+	htpasswdFile := path.Join(conf.NginxHtpasswdDirectory, def.Subdomain)
+	if len(def.Htpasswd) > 0 {
+		c := strings.Join(def.Htpasswd, "\n")
 		logrus.WithFields(logrus.Fields{
-			"subdomain": subdomain,
-			"domain":    domain,
+			"subdomain": def.Subdomain,
+			"domain":    conf.ServingDomain,
 		}).Debug("Writing htpasswd file")
 		d := []byte(c)
 		err := ioutil.WriteFile(htpasswdFile, d, 0644)
@@ -83,8 +86,8 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"subdomain": subdomain,
-		"domain":    domain,
+		"subdomain": def.Subdomain,
+		"domain":    conf.ServingDomain,
 	}).Debug("Writing nginx configuration")
 
 	nginxTemplate, err := Asset("templates/reverse_proxy.tmpl")
@@ -104,7 +107,16 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 
 	// build template context and render the template to `b`
 	var b bytes.Buffer
-	context := templateContext{Subdomain: subdomain, HasHtpasswd: hasHtpasswd, HtpasswdFile: htpasswdFile, SSLDisabled: sslDisabled, SSLCertPath: sslCertPath, SSLKeyPath: sslKeyPath, Domain: domain, Port: port}
+	context := templateContext{
+		Subdomain:    def.Subdomain,
+		HasHtpasswd:  hasHtpasswd,
+		HtpasswdFile: htpasswdFile,
+		SSLDisabled:  conf.NginxSSLDisabled,
+		SSLCertPath:  conf.NginxSSLCertPath,
+		SSLKeyPath:   conf.NginxSSLKeyPath,
+		Domain:       conf.ServingDomain,
+		Port:         port,
+	}
 	err = tmpl.Execute(&b, context)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -114,7 +126,7 @@ func WriteConfig(nginxConfDirectory string, nginxHtpasswdDirectory string, domai
 	}
 
 	// write rendered template to disk
-	err = ioutil.WriteFile(path.Join(nginxConfDirectory, fmt.Sprintf("%s.conf", subdomain)), b.Bytes(), 0644)
+	err = ioutil.WriteFile(path.Join(conf.NginxConfigDirectory, fmt.Sprintf("%s.conf", def.Subdomain)), b.Bytes(), 0644)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"err": err,
