@@ -31,7 +31,7 @@ func ClearConfigDirectory(directory string) error {
 // of it's configuration files and perform a hot reload.
 func ReloadServer() error {
 
-	runCmd := exec.Command("service", "nginx", "reload")
+	runCmd := exec.Command("sudo", "-n", "service", "nginx", "reload")
 
 	output, err := runCmd.CombinedOutput()
 	if err != nil {
