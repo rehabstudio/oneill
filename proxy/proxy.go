@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,7 +32,17 @@ func ClearConfigDirectory(directory string) error {
 func ReloadServer() error {
 
 	runCmd := exec.Command("service", "nginx", "reload")
-	return runCmd.Run()
+
+	output, err := runCmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(string(output[:]), "fail") {
+		return errors.New("Failed to reload nginx")
+	}
+
+	return nil
 }
 
 // templateContext is a simple struct used to contain context

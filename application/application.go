@@ -129,10 +129,6 @@ func (a *Application) RunApplication() error {
 	// finally, reload the proxy server by sending a HUP signal, this performs a hotreload without
 	// any downtime due to configuration loading
 	logrus.Debug("Reloading reverse proxy configuration")
-	err = proxy.ReloadServer()
-	if err != nil {
-		logrus.Warning("Unable to reload nginx configuration")
-	}
+	return proxy.ReloadServer()
 
-	return nil
 }
