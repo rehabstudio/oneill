@@ -3,12 +3,14 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Sirupsen/logrus"
 
-	"github.com/rehabstudio/oneill/application"
 	"github.com/rehabstudio/oneill/config"
-	"github.com/rehabstudio/oneill/containers"
-	"github.com/rehabstudio/oneill/definitions"
+	"github.com/rehabstudio/oneill/containerdefs"
+	"github.com/rehabstudio/oneill/dockerclient"
+	"github.com/rehabstudio/oneill/nginxclient"
 )
 
 // exitOnError checks that an error is not nil. If the passed value is an
@@ -19,38 +21,37 @@ func exitOnError(err error, prefix string) {
 	}
 }
 
-// initialises logrus logger at the specified logging level
-func initLogger(levelStr string) {
-
-	// parse level string and return an actual `Level` value that logrus can use
-	level, err := logrus.ParseLevel(levelStr)
-	exitOnError(err, "Unable to initialise logger")
-
-	// Only log the specified severity or above.
-	logrus.SetLevel(level)
-}
-
 func main() {
 
-	// load configuration data
 	config, err := config.LoadConfig()
 	exitOnError(err, "Unable to load configuration")
 
-	// initialise logger once configuration is complete
-	initLogger(config.LogLevel)
+	logLevel, err := logrus.ParseLevel(config.LogLevel)
+	exitOnError(err, "Unable to initialise logger")
+	logrus.SetLevel(logLevel)
 
-	// connect to docker API and return a client instance
-	dockerClient, err := containers.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials)
-	exitOnError(err, "Unable to connect to docker API")
+	dockerClient, err := dockerclient.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials)
+	exitOnError(err, "Unable to initialise docker client")
 
-	// load and validate container definitions
-	definitionLoader, err := definitions.GetLoader(config.DefinitionsURI)
-	exitOnError(err, "Unable to load container definitions")
-	definitions, err := definitions.LoadContainerDefinitions(definitionLoader)
+	definitionLoader, err := containerdefs.GetLoader(config.DefinitionsURI)
 	exitOnError(err, "Unable to load container definitions")
 
-	// initialise a new Application instance and start it
-	application := application.NewApplication(config, dockerClient, definitions)
-	exitOnError(application.RunApplication(), "Critical runtime error")
+	definitions, err := containerdefs.LoadContainerDefinitions(definitionLoader)
+	exitOnError(err, "Unable to load container definitions")
+
+	runningContainers, err := containerdefs.ProcessContainerDefinitions(definitions, dockerClient)
+	exitOnError(err, "Unable to process container definitions")
+
+	err = nginxclient.ConfigureAndReload(config, runningContainers)
+	exitOnError(err, "Unable to configure and reload nginx")
+
+	// sleep for a few seconds just to let any active requests finish up
+	// gracefully if possible. TODO: We should really only do this (same goes
+	// for reloading the nginx config) if something has actually changed.
+	logrus.Debug("Sleeping to allow active requests to finish gracefully")
+	time.Sleep(5 * time.Second)
+
+	err = dockerClient.RemoveOldContainers(runningContainers)
+	exitOnError(err, "Unable to stop and remove old containers")
 
 }

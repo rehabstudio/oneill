@@ -1,4 +1,4 @@
-package definitions
+package containerdefs
 
 import (
 	"fmt"
@@ -61,7 +61,9 @@ func LoadContainerDefinitions(loader DefinitionLoader) ([]*ContainerDefinition, 
 
 	// load default values for any fields in the container definition not set by the loader
 	for i := range definitions {
-		loadContainerDefaults(definitions[i])
+		if definitions[i].Tag == "" {
+			definitions[i].Tag = "latest"
+		}
 	}
 
 	// validate all container definitions, dropping any that don't pass validation

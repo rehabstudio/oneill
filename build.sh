@@ -23,9 +23,9 @@ EOUSAGE
 local_build() {
 
     # build templates into go source code for embedding in our binary
-    go-bindata -o proxy/bindata.go -pkg=proxy -prefix=proxy/ proxy/templates/
+    go-bindata -o nginxclient/bindata.go -pkg=nginxclient -prefix=nginxclient/ nginxclient/templates/
     if [ -n $2 ]; then
-        chown $2:$2 proxy/bindata.go
+        chown $2:$2 nginxclient/bindata.go
     fi
 
     # run the application's tests before building
