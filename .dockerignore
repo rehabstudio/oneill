@@ -1,9 +1,7 @@
 .git/
 Godeps/
-application/
 config/
-containers/
-definitions/
-logger/
-proxy/
+containerdefs/
+dockerclient/
+nginxclient/
 oneill

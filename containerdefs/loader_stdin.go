@@ -1,4 +1,4 @@
-package definitions
+package containerdefs
 
 import (
 	"io/ioutil"
@@ -15,7 +15,7 @@ func (l *LoaderStdin) ValidateURI() error {
 	return nil
 }
 
-// LoadContainerDefinitions reads  yaml or json data from stdin.
+// LoadContainerDefinitions reads yaml or json data from stdin.
 func (l *LoaderStdin) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
 	logrus.WithFields(logrus.Fields{
 		"source": "stdin",

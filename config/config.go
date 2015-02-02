@@ -7,17 +7,36 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// loadConfigFileFromDisk reads data from the specified yaml file and
-// unmarshalls it into a config struct
-func loadConfigFromDisk(path string) (*Configuration, error) {
+// LoadConfig initialises global configuration by first loading default values
+// and then overriding with values from a config file
+func LoadConfig() (*Configuration, error) {
 
-	// read file from disk
-	data, err := ioutil.ReadFile(path)
+	// parse config file location from command line flag
+	configFilePath := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
+	flag.Parse()
+
+	// load config from disk into global struct
+	return loadConfig(*configFilePath)
+}
+
+// loadConfig initialises a default config then overrides the default values
+// with values from the specified configuration file
+func loadConfig(configFilePath string) (*Configuration, error) {
+
+	// load default configuration
+	defaultConfig := loadDefaultConfig()
+
+	// read configuration file from disk and unmarshall
+	diskConfig, err := loadConfigFromDisk(configFilePath)
 	if err != nil {
 		return &Configuration{}, err
 	}
 
-	return loadConfigFromBytes(data)
+	// merge user config with default config to get effective configuration
+	// for this instance of the application.
+	config := mergeConfigs(defaultConfig, diskConfig)
+
+	return config, err
 }
 
 // loadConfigFromBytes takes a slice of bytes and unmarshalls the data into a
@@ -31,6 +50,19 @@ func loadConfigFromBytes(data []byte) (cd *Configuration, err error) {
 	}
 
 	return cd, nil
+}
+
+// loadConfigFileFromDisk reads data from the specified yaml file and
+// unmarshalls it into a config struct
+func loadConfigFromDisk(path string) (*Configuration, error) {
+
+	// read file from disk
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return &Configuration{}, err
+	}
+
+	return loadConfigFromBytes(data)
 }
 
 // mergeConfigs takes an arbitrary number of configuration structs, iterating
@@ -72,36 +104,4 @@ func mergeConfigs(configs ...*Configuration) *Configuration {
 	}
 
 	return newConfig
-}
-
-// loadConfig initialises a default config then overrides the default values
-// with values from the specified configuration file
-func loadConfig(configFilePath string) (*Configuration, error) {
-
-	// load default configuration
-	defaultConfig := loadDefaultConfig()
-
-	// read configuration file from disk and unmarshall
-	diskConfig, err := loadConfigFromDisk(configFilePath)
-	if err != nil {
-		return &Configuration{}, err
-	}
-
-	// merge user config with default config to get effective configuration
-	// for this instance of the application.
-	config := mergeConfigs(defaultConfig, diskConfig)
-
-	return config, err
-}
-
-// initialises global configuration by first loading default values and then
-// overriding with values from a config file
-func LoadConfig() (*Configuration, error) {
-
-	// parse config file location from command line flag
-	configFilePath := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
-	flag.Parse()
-
-	// load config from disk into global struct
-	return loadConfig(*configFilePath)
 }
