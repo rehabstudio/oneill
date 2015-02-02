@@ -12,6 +12,7 @@ func loadDefaultConfig() *Configuration {
 		NginxConfigDirectory:   "/etc/nginx/sites-enabled",
 		NginxHtpasswdDirectory: "/etc/nginx/htpasswd",
 		ServingDomain:          "example.com",
+		NginxDisabled:          false,
 		NginxSSLDisabled:       false,
 		NginxSSLCertPath:       "/etc/ssl/certs/oneill.crt",
 		NginxSSLKeyPath:        "/etc/ssl/private/oneill.pem",
