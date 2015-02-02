@@ -8,6 +8,11 @@
 # see README.md for explanation of appropriate values for `definitions_uri`
 definitions_uri: "file:///etc/oneill/definitions"
 
+# If true, all nginx functionality will be completely disabled. Use this if
+# you're solely running containers that shouldn't be exposed to the internet
+# or if you're using some other tool for service discovery and routing.
+nginx_disabled: false
+
 # The directory to which nginx configuration files should be written. Note
 # that oneill expects to own this directory and will remove any files
 # contained within the folder if they don't match a running container.

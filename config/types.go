@@ -8,6 +8,7 @@ type Configuration struct {
 	NginxHtpasswdDirectory string                         `yaml:"nginx_htpasswd_directory,omitempty"`
 	ServingDomain          string                         `yaml:"serving_domain,omitempty"`
 	RegistryCredentials    map[string]RegistryCredentials `yaml:"registry_credentials"`
+	NginxDisabled          bool                           `yaml:"nginx_disabled"`
 	NginxSSLDisabled       bool                           `yaml:"nginx_ssl_disabled"`
 	NginxSSLCertPath       string                         `yaml:"nginx_ssl_cert"`
 	NginxSSLKeyPath        string                         `yaml:"nginx_ssl_key"`

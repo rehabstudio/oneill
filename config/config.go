@@ -89,6 +89,9 @@ func mergeConfigs(configs ...*Configuration) *Configuration {
 		if !isZero(config.NginxSSLCertPath) {
 			newConfig.NginxSSLCertPath = config.NginxSSLCertPath
 		}
+		if !isZero(config.NginxDisabled) {
+			newConfig.NginxDisabled = config.NginxDisabled
+		}
 		if !isZero(config.NginxSSLDisabled) {
 			newConfig.NginxSSLDisabled = config.NginxSSLDisabled
 		}
