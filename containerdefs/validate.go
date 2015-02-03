@@ -46,25 +46,25 @@ func validateDefinition(cd *ContainerDefinition, cds []*ContainerDefinition) boo
 	if len(cd.Subdomain) < 3 {
 		logrus.WithFields(logrus.Fields{
 			"definition": cd.Subdomain,
-		}).Warning("`Subdomain` not long enough (must be at least 3 characters long)")
+		}).Warning("subdomain not long enough (must be at least 3 characters long)")
 		return false
 	}
 	if cd.Image == "" {
 		logrus.WithFields(logrus.Fields{
 			"definition": cd.Subdomain,
-		}).Warning("`Image` cannot be blank in container definition")
+		}).Warning("image missing in container definition")
 		return false
 	}
 	if !rxContainerName.MatchString(cd.Subdomain) {
 		logrus.WithFields(logrus.Fields{
 			"definition": cd.Subdomain,
-		}).Warning("Not a valid container name/subdomain")
+		}).Warning("not a valid container name/subdomain")
 		return false
 	}
 	if !definitionIsUnique(cd, cds) {
 		logrus.WithFields(logrus.Fields{
 			"definition": cd.Subdomain,
-		}).Warning("`Subdomain` must be unique")
+		}).Warning("subdomain must be unique")
 		return false
 	}
 
