@@ -1,11 +1,12 @@
 package containerdefs
 
 type ContainerDefinition struct {
-	Subdomain string   `yaml:"subdomain"`
-	Image     string   `yaml:"image"`
-	Tag       string   `yaml:"tag"`
-	Env       []string `yaml:"env"`
-	Htpasswd  []string `yaml:"htpasswd"`
+	Subdomain     string   `yaml:"subdomain"`
+	Image         string   `yaml:"image"`
+	Tag           string   `yaml:"tag"`
+	NginxDisabled bool     `yaml:"nginx_disabled"`
+	Env           []string `yaml:"env"`
+	Htpasswd      []string `yaml:"htpasswd"`
 }
 
 type RunningContainerDefinition struct {
