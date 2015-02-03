@@ -148,6 +148,7 @@ A single container definition should contain the following data:
 subdomain: example-subdomain                  # required
 image: example/some-container                 # required
 tag: v123                                     # optional (default: "latest")
+nginx_disabled: false                         # optional (default: false)
 env:                                          # optional (default: [])
   - "EXAMPLE=example"
   - "URL=http://www.example.com"

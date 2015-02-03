@@ -90,7 +90,9 @@ func removeIfRedundant(directory string, f os.FileInfo, rcs []*containerdefs.Run
 	// just return immediately and skip it.
 	for _, rc := range rcs {
 		if f.Name() == rc.Name {
-			return nil
+			if !rc.ContainerDefinition.NginxDisabled {
+				return nil
+			}
 		}
 	}
 
@@ -206,6 +208,12 @@ func writeNewFiles(d string, f cfWriter, c *config.Configuration, rcs []*contain
 
 	// loop over and write a configuration file for every running container
 	for _, rc := range rcs {
+		// if this container definition has explicitly disabled nginx support
+		// then we just skip it
+		if rc.ContainerDefinition.NginxDisabled {
+			continue
+		}
+		// call the passed in cfWriter function on each container
 		err = f(c, rc)
 		if err != nil {
 			return err

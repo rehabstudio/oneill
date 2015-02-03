@@ -320,6 +320,13 @@ func (d *dockerClient) ValidateImage(cd *containerdefs.ContainerDefinition) erro
 		return err
 	}
 
+	// if nginx/proxy support is disabled for this container then we can skip
+	// the final check for a single port, we don't care what it exposes in
+	// this case.
+	if cd.NginxDisabled {
+		return nil
+	}
+
 	// check that the image exposes exactly 1 port. For now oneill doesn't
 	// support containers unless they expose exactly one port, this is to make
 	// configuration and interaction with nginx much simpler. We may revise
