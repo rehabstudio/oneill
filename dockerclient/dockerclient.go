@@ -3,6 +3,7 @@ package dockerclient
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,14 +15,15 @@ import (
 )
 
 type dockerClient struct {
-	endpoint    string
-	client      *docker.Client
-	credentials map[string]docker.AuthConfiguration
+	endpoint      string
+	client        *docker.Client
+	credentials   map[string]docker.AuthConfiguration
+	nginxDisabled bool
 }
 
 // NewDockerClient returns a new docker client, preconfigured with the
 // credentials for any private registry we might want to use.
-func NewDockerClient(endpoint string, registryCredentials map[string]config.RegistryCredentials) (*dockerClient, error) {
+func NewDockerClient(endpoint string, registryCredentials map[string]config.RegistryCredentials, nginxDisabled bool) (*dockerClient, error) {
 
 	// connect to the docker daemon and initialise a new API client
 	client, err := docker.NewClient(endpoint)
@@ -31,8 +33,9 @@ func NewDockerClient(endpoint string, registryCredentials map[string]config.Regi
 
 	// initialise docker client
 	dc := dockerClient{
-		endpoint: endpoint,
-		client:   client,
+		endpoint:      endpoint,
+		client:        client,
+		nginxDisabled: nginxDisabled,
 	}
 
 	// initialise a docker.AuthConfiguration struct for each set of registry credentials
@@ -95,7 +98,7 @@ func (d *dockerClient) getContainerByName(name string) (docker.APIContainers, er
 // getPortFromContainer looks up a container by name and returns the currently
 // exposed port. An error is returned if the container is not exposing any
 // ports.
-func (d *dockerClient) getPortFromContainer(cName string) (int64, error) {
+func (d *dockerClient) getPortFromContainer(cName string, nginxExposedPort int64) (int64, error) {
 
 	c, err := d.getContainerByName(cName)
 	if err != nil {
@@ -103,9 +106,26 @@ func (d *dockerClient) getPortFromContainer(cName string) (int64, error) {
 	}
 
 	if len(c.Ports) < 1 {
-		cName := strings.TrimPrefix(c.Names[0], "/")
-		err := fmt.Errorf("Container not exposing any ports: %s", cName)
-		return 0, err
+		msg := "Container does not expose any ports"
+		logrus.WithFields(logrus.Fields{"container": cName}).Warning(msg)
+		return 0, fmt.Errorf(msg)
+	}
+
+	if nginxExposedPort == 0 && len(c.Ports) > 1 {
+		msg := "Container exposes more than one port but definition does not specify which to use"
+		logrus.WithFields(logrus.Fields{"container": cName}).Warning(msg)
+		return 0, fmt.Errorf(msg)
+	}
+
+	if len(c.Ports) > 1 {
+		for _, port := range c.Ports {
+			if port.PrivatePort == nginxExposedPort {
+				return port.PublicPort, nil
+			}
+		}
+		msg := "Container exposes more than one port but definition specifies an unused port"
+		logrus.WithFields(logrus.Fields{"container": cName}).Warning(msg)
+		return 0, fmt.Errorf(msg)
 	}
 
 	return c.Ports[0].PublicPort, nil
@@ -241,9 +261,15 @@ func (d *dockerClient) GetExistingContainer(cd *containerdefs.ContainerDefinitio
 			continue
 		}
 
-		port, err := d.getPortFromContainer(containerName)
-		if err != nil {
-			return &containerdefs.RunningContainerDefinition{}, err
+		var port int64
+
+		if cd.NginxDisabled || d.nginxDisabled {
+			port = 0
+		} else {
+			port, err = d.getPortFromContainer(containerName, cd.NginxExposedPort)
+			if err != nil {
+				return &containerdefs.RunningContainerDefinition{}, err
+			}
 		}
 
 		rcd := containerdefs.RunningContainerDefinition{
@@ -287,9 +313,15 @@ func (d *dockerClient) StartContainer(cd *containerdefs.ContainerDefinition) (*c
 		return &containerdefs.RunningContainerDefinition{}, err
 	}
 
-	port, err := d.getPortFromContainer(container.Name)
-	if err != nil {
-		return &containerdefs.RunningContainerDefinition{}, err
+	var port int64
+
+	if cd.NginxDisabled || d.nginxDisabled {
+		port = 0
+	} else {
+		port, err = d.getPortFromContainer(containerName, cd.NginxExposedPort)
+		if err != nil {
+			return &containerdefs.RunningContainerDefinition{}, err
+		}
 	}
 
 	rcd := containerdefs.RunningContainerDefinition{
@@ -323,16 +355,13 @@ func (d *dockerClient) ValidateImage(cd *containerdefs.ContainerDefinition) erro
 	// if nginx/proxy support is disabled for this container then we can skip
 	// the final check for a single port, we don't care what it exposes in
 	// this case.
-	if cd.NginxDisabled {
+	if cd.NginxDisabled || d.nginxDisabled {
 		return nil
 	}
 
-	// check that the image exposes exactly 1 port. For now oneill doesn't
-	// support containers unless they expose exactly one port, this is to make
-	// configuration and interaction with nginx much simpler. We may revise
-	// this decision in future.
-	if len(image.Config.ExposedPorts) != 1 {
-		errStr := "Image does not expose a single port, skipping"
+	// check that the image exposes at least 1 port.
+	if len(image.Config.ExposedPorts) < 1 {
+		errStr := "Image does not expose at least one port, skipping"
 		err = fmt.Errorf(errStr)
 		logrus.WithFields(logrus.Fields{
 			"image": cd.Image,
@@ -342,5 +371,26 @@ func (d *dockerClient) ValidateImage(cd *containerdefs.ContainerDefinition) erro
 		return err
 	}
 
-	return nil
+	// ensure that if the image exposes more than 1 port that the container
+	// definition has specified which one should be used.
+	if len(image.Config.ExposedPorts) > 1 {
+		for port, _ := range image.Config.ExposedPorts {
+			pNum, err := strconv.ParseInt(strings.Split(fmt.Sprintf("%v", port), "/")[0], 10, 64)
+			if err != nil {
+				continue
+			}
+			if pNum == cd.NginxExposedPort {
+				return nil
+			}
+		}
+		msg := "Image exposes more than one port but container definition specifies an unexposed port"
+		logrus.WithFields(logrus.Fields{
+			"image": cd.Image,
+			"tag":   cd.Tag,
+		}).Warning(msg)
+		return fmt.Errorf(msg)
+	} else {
+		return nil
+	}
+
 }
