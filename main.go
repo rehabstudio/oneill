@@ -28,7 +28,12 @@ func main() {
 
 	logLevel, err := logrus.ParseLevel(config.LogLevel)
 	exitOnError(err, "Unable to initialise logger")
+
+	// configure global logger instance
 	logrus.SetLevel(logLevel)
+	if config.LogFormat == "json" {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	}
 
 	dockerClient, err := dockerclient.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials, config.NginxDisabled)
 	exitOnError(err, "Unable to initialise docker client")

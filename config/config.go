@@ -77,6 +77,9 @@ func mergeConfigs(configs ...*Configuration) *Configuration {
 		if !isZero(config.DockerApiEndpoint) {
 			newConfig.DockerApiEndpoint = config.DockerApiEndpoint
 		}
+		if !isZero(config.LogFormat) {
+			newConfig.LogFormat = config.LogFormat
+		}
 		if !isZero(config.LogLevel) {
 			newConfig.LogLevel = config.LogLevel
 		}

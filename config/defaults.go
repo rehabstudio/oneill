@@ -6,6 +6,7 @@ import "reflect"
 func loadDefaultConfig() *Configuration {
 
 	config := &Configuration{
+		LogFormat:              "text",
 		LogLevel:               "info",
 		DefinitionsURI:         "file:///etc/oneill/definitions",
 		DockerApiEndpoint:      "unix:///var/run/docker.sock",

@@ -35,6 +35,10 @@ nginx_ssl_cert: /etc/ssl/certs/oneill.crt
 # nginx_ssl_disabled is false.
 nginx_ssl_key: /etc/ssl/private/oneill.pem
 
+# log_format controls the format of the output produced by oneill. The following
+# values are permitted: text (default), json
+log_format: text
+
 # log_level controls the amount of output produced by oneill. The following
 # values are permitted: debug, info, warning, error, fatal, panic
 log_level: info
