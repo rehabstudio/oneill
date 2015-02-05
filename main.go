@@ -30,7 +30,7 @@ func main() {
 	exitOnError(err, "Unable to initialise logger")
 	logrus.SetLevel(logLevel)
 
-	dockerClient, err := dockerclient.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials)
+	dockerClient, err := dockerclient.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials, config.NginxDisabled)
 	exitOnError(err, "Unable to initialise docker client")
 
 	definitionLoader, err := containerdefs.GetLoader(config.DefinitionsURI)

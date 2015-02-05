@@ -145,14 +145,39 @@ $ cat containers.yaml | oneill
 A single container definition should contain the following data:
 
 ```yaml
-subdomain: example-subdomain                  # required
-image: example/some-container                 # required
-tag: v123                                     # optional (default: "latest")
-nginx_disabled: false                         # optional (default: false)
-env:                                          # optional (default: [])
+# subdomain that this container will be served on (also used to form part of
+# the running container name). This value is required.
+subdomain: example-subdomain
+
+# the docker image that will be used to run this container. This value is
+# required.
+image: example/some-container
+
+# the specific tag that should be used when running this container. This value
+# is optional (default: "latest").
+tag: v123
+
+# disable nginx globally (disable all interaction with nginx). This value is
+# optional (default: false).
+nginx_disabled: false
+
+# When an image exposes more than one port, the following option must be set
+# to a valid port number that's exposed by the image. If this is not set
+# correctly oneill will not be able to expose this container via nginx. This
+# value is optional (default: 0).
+nginx_exposed_port: 0
+
+# add custom environment variables that will be passed into the container when
+# started. This value is optional (default: []).
+env:
   - "EXAMPLE=example"
   - "URL=http://www.example.com"
-htpasswd:                                     # optional (default: [])
+
+# adding htpasswd entries will cause oneill to lock this container/subdomain
+# down behind HTTP basic auth. Note: unless you're running on HTTPS it
+# probably isn't a good idea to use this feature.. This value is optional
+# (default: []).
+htpasswd:
   - bob:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
   - jon:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
 ```
