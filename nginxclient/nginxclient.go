@@ -23,39 +23,58 @@ import (
 // defaults to account for any silliness here.
 func ConfigureAndReload(c *config.Configuration, rcs []*containerdefs.RunningContainerDefinition) error {
 
+	// keep track of whether or not we need to reload the nginx config
+	var reloadRequired bool
+
 	// write nginx configuration file for each running container, overwriting
-	// old files if necessary. We return a list of filenames written which
-	// we'll use later.
-	err := writeNewFiles(c.NginxConfigDirectory, writeNewConfigFile, c, rcs)
+	// old files if necessary.
+	changed, err := writeNewFiles(c.NginxConfigDirectory, writeNewConfigFile, c, rcs)
 	if err != nil {
 		return err
 	}
+	if changed {
+		reloadRequired = true
+	}
 
 	// write htpasswd file for each container that requires it, overwriting
-	// old files if necessary. We return a list of filenames written which
-	// we'll use later.
-	err = writeNewFiles(c.NginxHtpasswdDirectory, writeNewHtpasswdFile, c, rcs)
+	// old files if necessary.
+	changed, err = writeNewFiles(c.NginxHtpasswdDirectory, writeNewHtpasswdFile, c, rcs)
 	if err != nil {
 		return err
+	}
+	if changed {
+		reloadRequired = true
 	}
 
 	// remove redundant configuration files from the config directory. Note
 	// that this won't immediately disable the old sites as nginx keeps its
 	// configuration in memory and only reloads it when asked.
-	err = removeOldFiles(c.NginxConfigDirectory, rcs)
+	changed, err = removeOldFiles(c.NginxConfigDirectory, rcs)
 	if err != nil {
 		return err
 	}
+	if changed {
+		reloadRequired = true
+	}
 
 	// remove redundant htpasswd files from the htpasswd directory.
-	err = removeOldFiles(c.NginxHtpasswdDirectory, rcs)
+	changed, err = removeOldFiles(c.NginxHtpasswdDirectory, rcs)
 	if err != nil {
 		return err
+	}
+	if changed {
+		reloadRequired = true
 	}
 
 	// reload nginx's configuration by sending a HUP signal to the master
 	// process, this performs a hot-reload without any downtime
-	return reloadNginxConfiguration()
+	if reloadRequired {
+		return reloadNginxConfiguration()
+	} else {
+		logrus.Debug("Skipped reloading nginx configuration")
+	}
+
+	return nil
 }
 
 // reloadNginxConfiguration issues a `service nginx reload` which causes nginx
@@ -84,51 +103,56 @@ func reloadNginxConfiguration() error {
 
 // removeIfRedundant checks the given file against a list of currently running
 // containers, removing it if a match is not found.
-func removeIfRedundant(directory string, f os.FileInfo, rcs []*containerdefs.RunningContainerDefinition) error {
+func removeIfRedundant(directory string, f os.FileInfo, rcs []*containerdefs.RunningContainerDefinition) (bool, error) {
 
 	// if filename matches the name of a currently running container then we
 	// just return immediately and skip it.
 	for _, rc := range rcs {
 		if f.Name() == rc.Name {
 			if !rc.ContainerDefinition.NginxDisabled {
-				return nil
+				return false, nil
 			}
 		}
 	}
 
 	filePath := path.Join(directory, f.Name())
 	logrus.WithFields(logrus.Fields{"path": filePath}).Info("Removing file")
-	return os.Remove(filePath)
+	return true, os.Remove(filePath)
 }
 
 // removeOldFiles scans a local directory, removing any files where the
 // filename does not match the name of a currently running container.
-func removeOldFiles(directory string, rcs []*containerdefs.RunningContainerDefinition) error {
+func removeOldFiles(directory string, rcs []*containerdefs.RunningContainerDefinition) (bool, error) {
+
+	var removedFiles bool
 
 	// scan the configured directory, erroring if we don't have permission, it
 	// doesn't exist, etc.
 	dirContents, err := ioutil.ReadDir(directory)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// loop over all files in the directory checking each one against our
 	// currently running list of containers. If the file doesn't match a
 	// running container then we delete it.
 	for _, f := range dirContents {
-		err = removeIfRedundant(directory, f, rcs)
+		removedFile, err := removeIfRedundant(directory, f, rcs)
 		if err != nil {
-			return err
+			return false, err
+		}
+		if removedFile {
+			removedFiles = removedFile
 		}
 	}
 
-	return nil
+	return removedFiles, nil
 }
 
 // writeIfChanged writes the given `content` to disk at `path` if the file
 // does not already exist. If the file does already exist then it will only be
 // written to if the content is different from what's on disk.
-func writeIfChanged(path string, content []byte) error {
+func writeIfChanged(path string, content []byte) (bool, error) {
 
 	var fileExists bool
 	var contentChanged bool
@@ -138,7 +162,7 @@ func writeIfChanged(path string, content []byte) error {
 
 		readContent, err := ioutil.ReadFile(path)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		if !bytes.Equal(content, readContent) {
@@ -148,17 +172,17 @@ func writeIfChanged(path string, content []byte) error {
 
 	if !fileExists || contentChanged {
 		logrus.WithFields(logrus.Fields{"path": path}).Info("Writing file")
-		return ioutil.WriteFile(path, content, 0644)
+		return true, ioutil.WriteFile(path, content, 0644)
 	}
 
-	return nil
+	return false, nil
 }
 
 // writeNewConfigFile writes a new nginx configuration file to disk for the
 // given container definition. A simple template file is used which is
 // compiled into the binary at build time. A new file will only be written if
 // the file either doesn't exist or its contents have changed.
-func writeNewConfigFile(c *config.Configuration, rc *containerdefs.RunningContainerDefinition) error {
+func writeNewConfigFile(c *config.Configuration, rc *containerdefs.RunningContainerDefinition) (bool, error) {
 
 	// check if this config file needs to reference a htpasswd file or not
 	hasHtpasswd := len(rc.ContainerDefinition.Htpasswd) > 0
@@ -167,11 +191,11 @@ func writeNewConfigFile(c *config.Configuration, rc *containerdefs.RunningContai
 	// load configuration file template so we can render it
 	nginxTemplateBytes, err := Asset("templates/reverse_proxy.tmpl")
 	if err != nil {
-		return err
+		return false, err
 	}
 	nginxTemplate, err := template.New("nginx").Parse(string(nginxTemplateBytes[:]))
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// build template context and render the template to `b`
@@ -187,7 +211,7 @@ func writeNewConfigFile(c *config.Configuration, rc *containerdefs.RunningContai
 		Port:         rc.Port,
 	}
 	if nginxTemplate.Execute(&b, context) != nil {
-		return err
+		return false, err
 	}
 
 	// write rendered template to disk
@@ -198,12 +222,14 @@ func writeNewConfigFile(c *config.Configuration, rc *containerdefs.RunningContai
 // writeNewFiles writes a file to disk for each running container using the
 // passed in function. writeNewFiles first ensures that the directory into
 // which the files will be written has been created.
-func writeNewFiles(d string, f cfWriter, c *config.Configuration, rcs []*containerdefs.RunningContainerDefinition) error {
+func writeNewFiles(d string, f cfWriter, c *config.Configuration, rcs []*containerdefs.RunningContainerDefinition) (bool, error) {
+
+	var wroteFiles bool
 
 	// create directory to store config/htpasswd files
 	err := os.MkdirAll(d, 0755)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// loop over and write a configuration file for every running container
@@ -214,22 +240,25 @@ func writeNewFiles(d string, f cfWriter, c *config.Configuration, rcs []*contain
 			continue
 		}
 		// call the passed in cfWriter function on each container
-		err = f(c, rc)
+		wroteFile, err := f(c, rc)
 		if err != nil {
-			return err
+			return false, err
+		}
+		if wroteFile {
+			wroteFiles = true
 		}
 	}
-	return nil
+	return wroteFiles, nil
 }
 
 // writeNewHtpasswdFile writes a htpasswd file to disk if required. A new file
 // will only be written if the file either doesn't exist or its contents have
 // changed.
-func writeNewHtpasswdFile(c *config.Configuration, rc *containerdefs.RunningContainerDefinition) error {
+func writeNewHtpasswdFile(c *config.Configuration, rc *containerdefs.RunningContainerDefinition) (bool, error) {
 
 	// check if we need to write a htpasswd file or not
 	if len(rc.ContainerDefinition.Htpasswd) == 0 {
-		return nil
+		return false, nil
 	}
 
 	// write htpasswd file to disk
