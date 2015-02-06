@@ -7,7 +7,7 @@ import (
 
 // cfWriter defines a function type that is used for writing nginx
 // configuration or htpasswd files to disk
-type cfWriter func(*config.Configuration, *containerdefs.RunningContainerDefinition) error
+type cfWriter func(*config.Configuration, *containerdefs.RunningContainerDefinition) (bool, error)
 
 // templateContext is a simple struct used to contain context
 // data for use when rendering templates
