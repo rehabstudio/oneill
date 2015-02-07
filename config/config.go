@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
@@ -9,19 +8,7 @@ import (
 
 // LoadConfig initialises global configuration by first loading default values
 // and then overriding with values from a config file
-func LoadConfig() (*Configuration, error) {
-
-	// parse config file location from command line flag
-	configFilePath := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
-	flag.Parse()
-
-	// load config from disk into global struct
-	return loadConfig(*configFilePath)
-}
-
-// loadConfig initialises a default config then overrides the default values
-// with values from the specified configuration file
-func loadConfig(configFilePath string) (*Configuration, error) {
+func LoadConfig(configFilePath string) (*Configuration, error) {
 
 	// load default configuration
 	defaultConfig := loadDefaultConfig()
