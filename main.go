@@ -3,12 +3,24 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"os"
+
 	"github.com/Sirupsen/logrus"
 
 	"github.com/rehabstudio/oneill/config"
 	"github.com/rehabstudio/oneill/containerdefs"
 	"github.com/rehabstudio/oneill/dockerclient"
 	"github.com/rehabstudio/oneill/nginxclient"
+)
+
+var (
+	buildDate     string
+	version       string
+	gitBranch     string
+	gitRevision   string
+	gitRepoStatus string
 )
 
 // exitOnError checks that an error is not nil. If the passed value is an
@@ -19,9 +31,30 @@ func exitOnError(err error, prefix string) {
 	}
 }
 
+// parseCliArgs parses any arguments passed to oneill on the command line
+func parseCliArgs() (string, bool) {
+
+	// parse config file location from command line flag
+	configFilePath := flag.String("config", "/etc/oneill/config.yaml", "location of the oneill config file")
+	showVersion := flag.Bool("v", false, "show version details and exit")
+	flag.Parse()
+
+	return *configFilePath, *showVersion
+}
+
 func main() {
 
-	config, err := config.LoadConfig()
+	configFilePath, showVersion := parseCliArgs()
+	if showVersion {
+		fmt.Printf("oneill v%s\n\n", version)
+		fmt.Printf("buildDate:     %s\n", buildDate)
+		fmt.Printf("gitBranch:     %s\n", gitBranch)
+		fmt.Printf("gitRevision:   %s\n", gitRevision)
+		fmt.Printf("gitRepoStatus: %s\n", gitRepoStatus)
+		os.Exit(0)
+	}
+
+	config, err := config.LoadConfig(configFilePath)
 	exitOnError(err, "Unable to load configuration")
 
 	logLevel, err := logrus.ParseLevel(config.LogLevel)

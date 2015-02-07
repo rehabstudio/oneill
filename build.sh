@@ -20,6 +20,18 @@ Available Commands:
 EOUSAGE
 }
 
+# set version info at build time
+version="0.2.0-dev"
+buildDate="`date -u +%Y-%m-%dT%H:%M:%SZ`"
+gitBranch="`git symbolic-ref HEAD`"
+gitRevision="`git rev-parse HEAD`"
+
+if [ -z "$(git status --porcelain)" ]; then
+    gitRepoStatus="clean"
+else
+    gitRepoStatus="dirty"
+fi
+
 local_build() {
 
     # build templates into go source code for embedding in our binary
@@ -32,7 +44,7 @@ local_build() {
     godep go test -a -cover ./...
 
     # build the application and output a binary
-    godep go build -a
+    godep go build -a -ldflags "-X main.version $version -X main.buildDate $buildDate -X main.gitBranch $gitBranch -X main.gitRevision $gitRevision -X main.gitRepoStatus $gitRepoStatus"
     if [ -n $2 ]; then
         chown $2:$2 oneill
     fi
