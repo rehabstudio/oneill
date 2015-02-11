@@ -87,6 +87,12 @@ func (cd *ContainerDefinition) AlreadyRunning() bool {
 		return false
 	}
 
+	// check that the running container's has correctly bind-mounted the
+	// docker socket (if configured to do so)
+	if cd.DockerControlEnabled != dockerclient.DockerSocketMounted(runningContainer.HostConfig.Binds) {
+		return false
+	}
+
 	return true
 }
 
