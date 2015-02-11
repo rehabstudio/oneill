@@ -110,7 +110,7 @@ func (cd *ContainerDefinition) RemoveContainer() error {
 // StartContainer assembles the appropriate options structs and starts a new
 // container that matches the container definition.
 func (cd *ContainerDefinition) StartContainer() error {
-	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env)
+	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env, cd.DockerControlEnabled)
 }
 
 // Validate checks that a container definition is internally consistent and

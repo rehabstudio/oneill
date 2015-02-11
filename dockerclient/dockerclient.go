@@ -2,7 +2,6 @@ package dockerclient
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -35,31 +34,6 @@ func InitDockerClient(endpoint string, registryCredentials map[string]config.Reg
 	}
 
 	return nil
-}
-
-// EnvsMatch checks if a running container's environment matches the one
-// defined in a container definition. The variables defined in the container
-// definition are added to those defined in the base image before comparing
-// with those read from the running container.
-func EnvsMatch(env0, env1, fromImage []string) bool {
-
-	for _, v := range fromImage {
-		env0 = append(env0, v)
-	}
-
-	if len(env0) != len(env1) {
-		return false
-	}
-
-	sort.Strings(env0)
-	sort.Strings(env1)
-	for i := range env0 {
-		if env0[i] != env1[i] {
-			return false
-		}
-	}
-
-	return true
 }
 
 // GetContainerByName searches for an existing container by name, returning an
@@ -142,14 +116,21 @@ func RemoveContainer(c docker.APIContainers) error {
 // StartContainer creates and starts a new container for the given container
 // definition. The name and port of the newly running container will be
 // returned along with the definition.
-func StartContainer(name string, repoTag string, env []string) error {
+func StartContainer(name string, repoTag string, env []string, dockerControlEnabled bool) error {
 
 	logrus.WithFields(logrus.Fields{
 		"container_name": name,
 		"repo_tag":       repoTag,
 	}).Info("Starting docker container")
 
-	hostConfig := docker.HostConfig{PublishAllPorts: true, RestartPolicy: docker.RestartOnFailure(10)}
+	var binds []string
+	if dockerControlEnabled {
+		binds = []string{"/var/run/docker.sock:/var/run/docker.sock"}
+	} else {
+		binds = []string{}
+	}
+
+	hostConfig := docker.HostConfig{PublishAllPorts: true, RestartPolicy: docker.RestartOnFailure(10), Binds: binds}
 	createContainerOptions := docker.CreateContainerOptions{
 		Name:       name,
 		Config:     &docker.Config{Image: repoTag, Env: env},
