@@ -1,13 +1,17 @@
-package containerdefs
+package loaders
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	"github.com/rehabstudio/oneill/containerdefs"
 )
 
 type LoaderDirectory struct {
@@ -15,19 +19,30 @@ type LoaderDirectory struct {
 }
 
 func (l *LoaderDirectory) ValidateURI() error {
-	return isDirectory(l.rootDirectory)
+	// check if rootDirectory exists
+	src, err := os.Stat(l.rootDirectory)
+	if err != nil {
+		return err
+	}
+
+	// check if rootDirectory is actually a directory
+	if !src.IsDir() {
+		return fmt.Errorf("%s is not a directory", l.rootDirectory)
+	}
+
+	return nil
 }
 
 // LoadContainerDefinitions scans a local directory (might have been passed from the command line)
 // for container definitions, reads them into memory and unmarshalls them into ContainerDefinition
 // structs. This scan is not recursive and will not search subdirectories for definitions.
-func (l *LoaderDirectory) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
+func (l *LoaderDirectory) LoadContainerDefinitions() ([]*containerdefs.ContainerDefinition, error) {
 	logrus.WithFields(logrus.Fields{
 		"source": "directory",
 		"path":   l.rootDirectory,
 	}).Debug("Loading container definitions")
 
-	var cds []*ContainerDefinition
+	var cds []*containerdefs.ContainerDefinition
 
 	// scan the configured directory, erroring if we don't have permission, it doesn't exist, etc.
 	dirContents, err := ioutil.ReadDir(l.rootDirectory)
@@ -40,7 +55,7 @@ func (l *LoaderDirectory) LoadContainerDefinitions() ([]*ContainerDefinition, er
 		ext := strings.ToLower(filepath.Ext(f.Name()))
 		if ext == ".yaml" || ext == ".json" {
 			cdPath := path.Join(l.rootDirectory, f.Name())
-			var cd *ContainerDefinition
+			var cd *containerdefs.ContainerDefinition
 			cd, err := loadSingleContainerDefinition(cdPath)
 			// if we aren't able to load the definition for some reason we just move on to the next
 			// folder, it's not fatal, oneill will just act as if it doesn't exist
@@ -57,9 +72,9 @@ func (l *LoaderDirectory) LoadContainerDefinitions() ([]*ContainerDefinition, er
 
 // loadSingleContainerDefinition loads a single container definition from disk and unmarshalls
 // it into a ContainerDefinition struct
-func loadSingleContainerDefinition(path string) (*ContainerDefinition, error) {
+func loadSingleContainerDefinition(path string) (*containerdefs.ContainerDefinition, error) {
 
-	cd := ContainerDefinition{}
+	cd := containerdefs.ContainerDefinition{}
 
 	// read file from disk
 	data, err := ioutil.ReadFile(path)

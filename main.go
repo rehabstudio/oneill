@@ -12,7 +12,7 @@ import (
 	"github.com/rehabstudio/oneill/config"
 	"github.com/rehabstudio/oneill/containerdefs"
 	"github.com/rehabstudio/oneill/dockerclient"
-	"github.com/rehabstudio/oneill/nginxclient"
+	"github.com/rehabstudio/oneill/loaders"
 )
 
 var (
@@ -66,25 +66,20 @@ func main() {
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 	}
 
-	dockerClient, err := dockerclient.NewDockerClient(config.DockerApiEndpoint, config.RegistryCredentials, config.NginxDisabled)
+	err = dockerclient.InitDockerClient(config.DockerApiEndpoint, config.RegistryCredentials)
 	exitOnError(err, "Unable to initialise docker client")
 
-	definitionLoader, err := containerdefs.GetLoader(config.DefinitionsURI)
+	// load container definitions
+	definitionLoader, err := loaders.GetLoader(config.DefinitionsURI)
 	exitOnError(err, "Unable to load container definitions")
-
 	definitions, err := containerdefs.LoadContainerDefinitions(definitionLoader)
 	exitOnError(err, "Unable to load container definitions")
 
-	runningContainers, err := containerdefs.ProcessContainerDefinitions(definitions, dockerClient)
-	exitOnError(err, "Unable to process container definitions")
+	// stop redundant containers
+	err = containerdefs.RemoveRedundantContainers(definitions)
+	exitOnError(err, "Unable to remove redundant containers")
 
-	// if nginx is disabled globally we just skip the configuration and reload steps entirely
-	if !config.NginxDisabled {
-		err = nginxclient.ConfigureAndReload(config, runningContainers)
-		exitOnError(err, "Unable to configure and reload nginx")
-	}
-
-	err = dockerClient.RemoveOldContainers(runningContainers)
-	exitOnError(err, "Unable to stop and remove old containers")
-
+	// process all container definitions
+	err = containerdefs.ProcessContainerDefinitions(definitions)
+	exitOnError(err, "Unable to process service container definitions")
 }

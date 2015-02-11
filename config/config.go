@@ -70,29 +70,8 @@ func mergeConfigs(configs ...*Configuration) *Configuration {
 		if !isZero(config.LogLevel) {
 			newConfig.LogLevel = config.LogLevel
 		}
-		if !isZero(config.NginxConfigDirectory) {
-			newConfig.NginxConfigDirectory = config.NginxConfigDirectory
-		}
-		if !isZero(config.NginxHtpasswdDirectory) {
-			newConfig.NginxHtpasswdDirectory = config.NginxHtpasswdDirectory
-		}
-		if !isZero(config.NginxSSLCertPath) {
-			newConfig.NginxSSLCertPath = config.NginxSSLCertPath
-		}
-		if !isZero(config.NginxDisabled) {
-			newConfig.NginxDisabled = config.NginxDisabled
-		}
-		if !isZero(config.NginxSSLDisabled) {
-			newConfig.NginxSSLDisabled = config.NginxSSLDisabled
-		}
-		if !isZero(config.NginxSSLKeyPath) {
-			newConfig.NginxSSLKeyPath = config.NginxSSLKeyPath
-		}
 		if !isZero(config.RegistryCredentials) {
 			newConfig.RegistryCredentials = config.RegistryCredentials
-		}
-		if !isZero(config.ServingDomain) {
-			newConfig.ServingDomain = config.ServingDomain
 		}
 	}
 

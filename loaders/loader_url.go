@@ -1,4 +1,4 @@
-package containerdefs
+package loaders
 
 import (
 	"io/ioutil"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	"github.com/rehabstudio/oneill/containerdefs"
 )
 
 type LoaderURL struct {
@@ -19,13 +21,13 @@ func (l *LoaderURL) ValidateURI() error {
 // LoadContainerDefinitions reads a remote url that returns a list of container
 // definitions in yaml or json format, loads them into memory and unmarshalls them
 // into ContainerDefinition structs.
-func (l *LoaderURL) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
+func (l *LoaderURL) LoadContainerDefinitions() ([]*containerdefs.ContainerDefinition, error) {
 	logrus.WithFields(logrus.Fields{
 		"source": "url",
 		"path":   l.url,
 	}).Debug("Loading container definitions")
 
-	var cd []*ContainerDefinition
+	var cd []*containerdefs.ContainerDefinition
 
 	response, err := http.Get(l.url)
 	if err != nil {

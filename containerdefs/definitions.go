@@ -1,78 +1,143 @@
 package containerdefs
 
 import (
-	"fmt"
-	"net/url"
+	"regexp"
+
+	"github.com/Sirupsen/logrus"
+
+	"github.com/rehabstudio/oneill/dockerclient"
 )
 
-// GetLoader parses a given URI and returns an appropriate loader. For now
-// this always returns our default (and only) loader, but could be easily
-// expanded to load container definitions from a remote location, or from a
-// single file.
-func GetLoader(uriStr string) (DefinitionLoader, error) {
+var (
+	rxContainerName = regexp.MustCompile(`^/?[a-zA-Z0-9_-]+$`)
+)
 
-	// parse uri so we can decide which loader to use
-	uri, err := url.Parse(uriStr)
-	if err != nil {
-		return &LoaderDirectory{rootDirectory: ""}, err
-	}
+type ContainerDefinition struct {
+	// ContainerName controls the user-specified part of the name oneill will
+	// give to the container at startup time. oneill uses a simple convention
+	// when naming containers `{prefix}-{container-name}`.
+	// `prefix` specifies whether this container is an application or service
+	// container, and `container-name` is specified by the user in a container
+	// definition.
+	ContainerName string `yaml:"container_name"`
 
-	// return an appropriate file or directory loader
-	if uri.Scheme == "file" {
-		if err := isDirectory(uri.Path); err == nil {
-			return &LoaderDirectory{rootDirectory: uri.Path}, nil
-		} else {
-			return &LoaderFile{path: uri.Path}, nil
-		}
-	}
+	// RepoTag controls the container that will be pulled and run for this
+	// container definition. This is in the same format as you would pass to
+	// `docker run`, e.g. `locahost:5000/myimage:latest`, `nginx`,
+	// `ubuntu:14.04`, `my.private.repo/myotherimage`
+	RepoTag string `yaml:"repo_tag"`
 
-	// return the http loader
-	if uri.Scheme == "http" || uri.Scheme == "https" {
-		return &LoaderURL{url: uriStr}, nil
-	}
+	// Env is a slice containing arbitrary environment variables that get
+	// passed to new containers at runtime. Variables set here will override
+	// environment variables set anywhere else (including those set by oneill
+	// itself), so use with caution.
+	Env []string `yaml:"env"`
 
-	// return the http loader
-	if uri.Scheme == "stdin" {
-		return &LoaderStdin{}, nil
-	}
+	// should persistence be enabled for this container? default off as we
+	// don't want to encourage people to use persistence (whilst acknowledging
+	// that it is necessary in some situations).
+	PersistenceEnabled bool `yaml:"persistence_enabled"`
 
-	// couldn't find a loader, return an error :(
-	err = fmt.Errorf("Unable find matching loader for definitions uri: %s", uriStr)
-	return &LoaderDirectory{rootDirectory: ""}, err
+	// should the docker control socket be bind-mounted into this container?
+	// this is useful for service containers that need to be able to see or
+	// control what other containers are doing (nginx service, fluentd
+	// service, etc. need this functionality).
+	DockerControlEnabled bool `yaml:"docker_control_enabled"`
+
+	// service containers allow an explicit port mapping as some services need
+	// to be exposed on specific ports to be useful e.g. nginx on 80/443 for
+	// serving http. Regular containers do not need this functionality.
+	PortMapping map[int]int `yaml:"port_mapping"`
 }
 
-// LoadContainerDefinitions scans a local directory (might have been passed from the command line)
-// for container definitions, reads them into memory and unmarshalls them into ContainerDefinition
-// structs.
-func LoadContainerDefinitions(loader DefinitionLoader) ([]*ContainerDefinition, error) {
+// AlreadyRunning checks whether a container is already running that matches
+// *exactly* this container definition.
+func (cd *ContainerDefinition) AlreadyRunning() bool {
 
-	// validate the uri that's been passed to the definition, this might be ensuring that a given
-	// directory exists or that a url returns a 200 status code.
-	if err := loader.ValidateURI(); err != nil {
-		return []*ContainerDefinition{}, err
-	}
-
-	// load container definitions. By default this is from disk, but could be from a remote
-	// location if a loader for that source exists.
-	definitions, err := loader.LoadContainerDefinitions()
+	// check that an image with the given tag actually exists (container can't
+	// be running if the image isn't there)
+	availableImage, err := dockerclient.InspectImage(cd.RepoTag)
 	if err != nil {
-		return definitions, err
+		return false
 	}
 
-	// load default values for any fields in the container definition not set by the loader
-	for i := range definitions {
-		if definitions[i].Tag == "" {
-			definitions[i].Tag = "latest"
-		}
+	// grab an APIContainer by name
+	c, err := dockerclient.GetContainerByName(cd.ContainerName)
+	if err != nil {
+		return false
 	}
 
-	// validate all container definitions, dropping any that don't pass validation
-	var definitionsValidated []*ContainerDefinition
-	for _, definition := range definitions {
-		if validateDefinition(definition, definitions) {
-			definitionsValidated = append(definitionsValidated, definition)
-		}
+	// check that the container is actually running
+	runningContainer, err := dockerclient.InspectContainer(c.ID)
+	if err != nil {
+		return false
+	}
+	if !runningContainer.State.Running {
+		return false
 	}
 
-	return definitionsValidated, nil
+	// check that the image running is the latest that's available locally
+	if runningContainer.Image != availableImage.ID {
+		return false
+	}
+
+	// check that the running container's environment matches the one in
+	// the container definition
+	if !dockerclient.EnvsMatch(cd.Env, runningContainer.Config.Env, availableImage.Config.Env) {
+		return false
+	}
+
+	return true
+}
+
+// RemoveContainer removes a container with the same name as contained within
+// this definition if one exists.
+func (cd *ContainerDefinition) RemoveContainer() error {
+
+	container, err := dockerclient.GetContainerByName(cd.ContainerName)
+	if err != nil {
+		return nil
+	}
+
+	err = dockerclient.RemoveContainer(container)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// StartContainer assembles the appropriate options structs and starts a new
+// container that matches the container definition.
+func (cd *ContainerDefinition) StartContainer() error {
+	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env)
+}
+
+// Validate checks that a container definition is internally consistent and
+// that its configuration is valid in isolation. Validation of container
+// definitions as a whole group happens (e.g. testing for uniqueness of
+// container names or port mappings) elsewhere in the app.
+func (cd *ContainerDefinition) Validate() bool {
+	if len(cd.ContainerName) < 3 {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+		}).Warning("container_name not long enough (must be at least 3 characters long)")
+		return false
+	}
+
+	if cd.RepoTag == "" {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+		}).Warning("repo_tag missing in container definition")
+		return false
+	}
+
+	if !rxContainerName.MatchString(cd.ContainerName) {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+		}).Warning("not a valid value for container_name")
+		return false
+	}
+
+	return true
 }
