@@ -3,6 +3,8 @@ package containerdefs
 import (
 	"sync"
 
+	"github.com/Sirupsen/logrus"
+
 	"github.com/rehabstudio/oneill/dockerclient"
 )
 
@@ -17,15 +19,31 @@ func processContainerDefinition(cd *ContainerDefinition) {
 	// container we want to start, if so then we can stop processing this
 	// definition.
 	if cd.AlreadyRunning() {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+		}).Debug("Container already running, no action taken")
 		return
 	}
 
 	// remove container if one is running with the same name since we know
 	// it's not configured correctly (or we would have bailed out by now)
 	err := cd.RemoveContainer()
-	if err == nil {
-		// create and start the new container
-		cd.StartContainer()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+			"err":            err,
+		}).Error("Unable to remove docker container")
+		return
+	}
+
+	// create and start the new container
+	err = cd.StartContainer()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"container_name": cd.ContainerName,
+			"err":            err,
+		}).Error("Unable to start docker container")
+		return
 	}
 }
 

@@ -79,6 +79,10 @@ func ListContainers() ([]docker.APIContainers, error) {
 // registries.
 func PullImage(repoTag string) error {
 
+	logrus.WithFields(logrus.Fields{
+		"repo_tag": repoTag,
+	}).Debug("Pulling latest image from registry")
+
 	// configuration options that get passed to client.PullImage
 	repository, tag := docker.ParseRepositoryTag(repoTag)
 	pullImageOptions := docker.PullImageOptions{Repository: repository, Tag: tag}
@@ -116,13 +120,14 @@ func RemoveContainer(c docker.APIContainers) error {
 // StartContainer creates and starts a new container for the given container
 // definition. The name and port of the newly running container will be
 // returned along with the definition.
-func StartContainer(name string, repoTag string, env []string, dockerControlEnabled bool) error {
+func StartContainer(name string, repoTag string, env []string, dockerControlEnabled bool, portMapping map[int]int) error {
 
 	logrus.WithFields(logrus.Fields{
 		"container_name": name,
 		"repo_tag":       repoTag,
 	}).Info("Starting docker container")
 
+	// configure docker socket mount if required
 	var binds []string
 	if dockerControlEnabled {
 		binds = []string{"/var/run/docker.sock:/var/run/docker.sock"}
@@ -130,10 +135,27 @@ func StartContainer(name string, repoTag string, env []string, dockerControlEnab
 		binds = []string{}
 	}
 
-	hostConfig := docker.HostConfig{PublishAllPorts: true, RestartPolicy: docker.RestartOnFailure(10), Binds: binds}
+	// convert portMapping map into the map[Port][]PortBinding that docker expects
+	portBindings := portMappingToPortBindings(portMapping)
+	// convert portMapping map into the map[Port]struct{} that docker expects
+	exposedPorts := make(map[docker.Port]struct{})
+	for _, internalPort := range portMapping {
+		exposedPorts[docker.Port(fmt.Sprintf("%d/tcp", internalPort))] = struct{}{}
+	}
+
+	// if we've got any explicitly exposed ports then don't publish all ports
+	// for the container
+	var publishAllPorts bool
+	if len(exposedPorts) > 0 {
+		publishAllPorts = false
+	} else {
+		publishAllPorts = true
+	}
+
+	hostConfig := docker.HostConfig{PublishAllPorts: publishAllPorts, RestartPolicy: docker.RestartOnFailure(10), Binds: binds, PortBindings: portBindings}
 	createContainerOptions := docker.CreateContainerOptions{
 		Name:       name,
-		Config:     &docker.Config{Image: repoTag, Env: env},
+		Config:     &docker.Config{Image: repoTag, Env: env, ExposedPorts: exposedPorts},
 		HostConfig: &hostConfig,
 	}
 

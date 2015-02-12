@@ -46,7 +46,9 @@ type ContainerDefinition struct {
 
 	// service containers allow an explicit port mapping as some services need
 	// to be exposed on specific ports to be useful e.g. nginx on 80/443 for
-	// serving http. Regular containers do not need this functionality.
+	// serving http. Regular containers do not need this functionality. Keys
+	// are host port numbers and values are the internal port numbers that
+	// should be exposed.
 	PortMapping map[int]int `yaml:"port_mapping"`
 }
 
@@ -93,6 +95,12 @@ func (cd *ContainerDefinition) AlreadyRunning() bool {
 		return false
 	}
 
+	// check that the running container's port mappings matche those in the
+	// container definition
+	if !dockerclient.PortsMatch(cd.PortMapping, runningContainer.HostConfig.PortBindings) {
+		return false
+	}
+
 	return true
 }
 
@@ -116,7 +124,7 @@ func (cd *ContainerDefinition) RemoveContainer() error {
 // StartContainer assembles the appropriate options structs and starts a new
 // container that matches the container definition.
 func (cd *ContainerDefinition) StartContainer() error {
-	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env, cd.DockerControlEnabled)
+	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env, cd.DockerControlEnabled, cd.PortMapping)
 }
 
 // Validate checks that a container definition is internally consistent and
