@@ -2,6 +2,7 @@ package dockerclient
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -120,7 +121,7 @@ func RemoveContainer(c docker.APIContainers) error {
 // StartContainer creates and starts a new container for the given container
 // definition. The name and port of the newly running container will be
 // returned along with the definition.
-func StartContainer(name string, repoTag string, env []string, dockerControlEnabled bool, portMapping map[int]int) error {
+func StartContainer(name string, repoTag string, env []string, dockerControlEnabled bool, persistenceEnabled bool, portMapping map[int]int, persistenceDir string) error {
 
 	logrus.WithFields(logrus.Fields{
 		"container_name": name,
@@ -133,6 +134,18 @@ func StartContainer(name string, repoTag string, env []string, dockerControlEnab
 		binds = []string{"/var/run/docker.sock:/var/run/docker.sock"}
 	} else {
 		binds = []string{}
+	}
+
+	// configure volumes if persistence is enabled for this container
+	if persistenceEnabled {
+		image, err := InspectImage(repoTag)
+		if err != nil {
+			return err
+		}
+		for volume, _ := range image.Config.Volumes {
+			mountPath := path.Join(persistenceDir, name, volume)
+			binds = append(binds, fmt.Sprintf("%s:%s", mountPath, volume))
+		}
 	}
 
 	// convert portMapping map into the map[Port][]PortBinding that docker expects

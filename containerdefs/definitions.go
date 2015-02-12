@@ -54,7 +54,7 @@ type ContainerDefinition struct {
 
 // AlreadyRunning checks whether a container is already running that matches
 // *exactly* this container definition.
-func (cd *ContainerDefinition) AlreadyRunning() bool {
+func (cd *ContainerDefinition) AlreadyRunning(persistenceDir string) bool {
 
 	// check that an image with the given tag actually exists (container can't
 	// be running if the image isn't there)
@@ -89,15 +89,21 @@ func (cd *ContainerDefinition) AlreadyRunning() bool {
 		return false
 	}
 
-	// check that the running container's has correctly bind-mounted the
-	// docker socket (if configured to do so)
+	// check that the running container has correctly bind-mounted the docker
+	// socket (if configured to do so)
 	if cd.DockerControlEnabled != dockerclient.DockerSocketMounted(runningContainer.HostConfig.Binds) {
 		return false
 	}
 
-	// check that the running container's port mappings matche those in the
+	// check that the running container's port mappings match those in the
 	// container definition
 	if !dockerclient.PortsMatch(cd.PortMapping, runningContainer.HostConfig.PortBindings) {
+		return false
+	}
+
+	// check that the running container has correctly bind-mounted all volumes
+	// if persistence is enabled in the definition.
+	if cd.PersistenceEnabled && !dockerclient.AllVolumesMounted(cd.ContainerName, persistenceDir, runningContainer.Image, runningContainer.Volumes) {
 		return false
 	}
 
@@ -123,8 +129,8 @@ func (cd *ContainerDefinition) RemoveContainer() error {
 
 // StartContainer assembles the appropriate options structs and starts a new
 // container that matches the container definition.
-func (cd *ContainerDefinition) StartContainer() error {
-	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env, cd.DockerControlEnabled, cd.PortMapping)
+func (cd *ContainerDefinition) StartContainer(persistenceDir string) error {
+	return dockerclient.StartContainer(cd.ContainerName, cd.RepoTag, cd.Env, cd.DockerControlEnabled, cd.PersistenceEnabled, cd.PortMapping, persistenceDir)
 }
 
 // Validate checks that a container definition is internally consistent and

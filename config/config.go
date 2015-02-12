@@ -70,6 +70,9 @@ func mergeConfigs(configs ...*Configuration) *Configuration {
 		if !isZero(config.LogLevel) {
 			newConfig.LogLevel = config.LogLevel
 		}
+		if !isZero(config.PersistenceDirectory) {
+			newConfig.PersistenceDirectory = config.PersistenceDirectory
+		}
 		if !isZero(config.RegistryCredentials) {
 			newConfig.RegistryCredentials = config.RegistryCredentials
 		}

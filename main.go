@@ -80,6 +80,6 @@ func main() {
 	exitOnError(err, "Unable to remove redundant containers")
 
 	// process all container definitions
-	err = containerdefs.ProcessContainerDefinitions(definitions)
+	err = containerdefs.ProcessContainerDefinitions(config, definitions)
 	exitOnError(err, "Unable to process service container definitions")
 }
