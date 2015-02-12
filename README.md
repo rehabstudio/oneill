@@ -112,7 +112,7 @@ straightforward I hope), but a rough overview is provided below:
     For each valid container definition:
         Pull latest docker image (if available)
         Validate docker image
-        Check if a container is already running tha matches the definition
+        Check if a container is already running that matches the definition
         Stop the old container if necessary
         Start a new container if necessary
 ```
