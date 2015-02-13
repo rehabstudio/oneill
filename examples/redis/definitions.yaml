@@ -1,0 +1,9 @@
+##############################
+# Persistent redis container #
+##############################
+
+- container_name: redis
+  repo_tag: redis:latest
+  persistence_enabled: true
+  port_mapping:
+    6379: 6379

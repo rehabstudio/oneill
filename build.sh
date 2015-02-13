@@ -34,12 +34,6 @@ fi
 
 local_build() {
 
-    # build templates into go source code for embedding in our binary
-    go-bindata -o nginxclient/bindata.go -pkg=nginxclient -prefix=nginxclient/ nginxclient/templates/
-    if [ -n $2 ]; then
-        chown $2:$2 nginxclient/bindata.go
-    fi
-
     # run the application's tests before building
     godep go test -a -cover ./...
 

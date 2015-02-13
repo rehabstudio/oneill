@@ -1,4 +1,4 @@
-package containerdefs
+package loaders
 
 import (
 	"io/ioutil"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	"github.com/rehabstudio/oneill/containerdefs"
 )
 
 type LoaderStdin struct{}
@@ -16,13 +18,13 @@ func (l *LoaderStdin) ValidateURI() error {
 }
 
 // LoadContainerDefinitions reads yaml or json data from stdin.
-func (l *LoaderStdin) LoadContainerDefinitions() ([]*ContainerDefinition, error) {
+func (l *LoaderStdin) LoadContainerDefinitions() ([]*containerdefs.ContainerDefinition, error) {
 	logrus.WithFields(logrus.Fields{
 		"source": "stdin",
 		"path":   nil,
 	}).Debug("Loading container definitions")
 
-	var cd []*ContainerDefinition
+	var cd []*containerdefs.ContainerDefinition
 
 	// read data from stdin
 	data, err := ioutil.ReadAll(os.Stdin)

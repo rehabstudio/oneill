@@ -8,32 +8,10 @@
 # see README.md for explanation of appropriate values for `definitions_uri`
 definitions_uri: "file:///etc/oneill/definitions"
 
-# If true, all nginx functionality will be completely disabled. Use this if
-# you're solely running containers that shouldn't be exposed to the internet
-# or if you're using some other tool for service discovery and routing.
-nginx_disabled: false
-
-# The directory to which nginx configuration files should be written. Note
-# that oneill expects to own this directory and will remove any files
-# contained within the folder if they don't match a running container.
-nginx_config_directory: "/etc/nginx/sites-enabled"
-
-# The directory to which nginx will place the generated htpasswd files. Note
-# that oneill will create dynamically generated htpasswd files in this
-# directory so it needs to be able to write to this folder.
-nginx_htpasswd_directory: "/etc/nginx/htpasswd"
-
-# If true, no SSL related configuration will be included in the vhost
-# configuration files generated for use with nginx.
-nginx_ssl_disabled: false
-
-# nginx_ssl_cert is the path to the SSL certificate bundle. Required if
-# nginx_ssl_disabled is false.
-nginx_ssl_cert: /etc/ssl/certs/oneill.crt
-
-# nginx_ssl_key is the path to the SSL private key file. Required if
-# nginx_ssl_disabled is false.
-nginx_ssl_key: /etc/ssl/private/oneill.pem
+# docker_api_endpoint defines the url oneill will use to connect to the docker
+# API. By default this uses a unix socket at `/var/run/docker.sock` but it
+# could also be a remote docker daemon communicating via HTTP.
+docker_api_endpoint: "unix:///var/run/docker.sock"
 
 # log_format controls the format of the output produced by oneill. The following
 # values are permitted: text (default), json
@@ -43,12 +21,9 @@ log_format: text
 # values are permitted: debug, info, warning, error, fatal, panic
 log_level: info
 
-# The domain specified here will be used when generating nginx configuration
-# files for the containers. This should be a valid domain name/hostname that
-# resolves to the system running oneill. If you want subdomains created by
-# oneill to work automatically you should create a `*.example.com` DNS A
-# record pointing at the server running oneill.
-serving_domain: example.com
+# persistence_directory controls the directory under which oneill will store
+# any data from persistent containers.
+persistence_directory: "/var/lib/oneill/data"
 
 # registry_credentials is a map in which you can specify login details for any
 # private registry you wish to use with oneill (you can ignore this if your

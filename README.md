@@ -2,65 +2,99 @@ oneill
 ======
 
 oneill is a small tool that manages a set of docker containers running on a
-single host, exposing them to the internet using Nginx as a reverse proxy.
+single host. It uses a simple YAML/JSON configuration format to define the
+containers that should running.
 
 
 ## Why another container orchestration tool?
 
-oneill is a much more narrowly focussed, more opinionated tool than most
-others. It's designed to fulfil a very specific requirement, running a set of
-12-factor style application containers on a single host based on a simple
-yaml/json configuration format.
+oneill is a smaller, more opinionated tool than most others. It's designed to
+perform a single simple role, running a configured set of docker containers on
+a single host. oneill is designed to be the glue layer between a loosely
+coupled set of components which run in docker containers.
 
-oneill expects to take full control of a host server on which both docker and
-nginx are already running and installed. oneill loads its configuration from
-one of a number of configurable sources (single file, directory of multiple
-files, remote HTTP API etc.), pulls the required images from public or private
-registries, starts/stops the required containers with configured environment
-variables and reconfigures nginx to point the right subdomains at the right
-applications.
+It's not accurate to call oneill a PaaS, but it's designed to provide a great
+foundation for building your own bespoke PaaS-like infrastructure.
 
-## What it doesn't do
+oneill has only a single requirement, that docker is installed and running,
+additionally, it expects to have full control of *all* containers running on
+the system on which it is installed. Be careful, if you run oneill it will
+remove any containers not defined in its own configuration.
 
-oneill does not provide any support for persistence, applications/containers
-must use a remote backing store such as Amazon S3 or Google Cloud Storage.
-Filesystems within containers *are* writable, but should be considered
-ephemeral as they may be thrown away if oneill decides to restart/upgrade the
-container for any reason.
+oneill loads its container definitions from one of a number of configurable
+sources (single file, directory of multiple files, remote HTTP API etc.), the
+definitions are then validated for correctness. oneill will pull any required
+images from the appropriate public or private registries each time it runs,
+ensuring the latest image is always available. Containers will then be
+stopped/started/upgraded as required to ensure that the running set matches
+the validated container definitions loaded earlier.
 
-oneill is not a suitable platform for containers which need durable
-persistence (at present, this may change in future) like database servers or
-anything which couldn't cope with losing all of its state at any moment.
-Depending on your workload oneill may be a suitable platform for cache servers
-like memcached or redis.
 
-oneill doesn't concern itself with clustering or running multiple hosts, but
-it's built in way that makes running in those situations as simple as possible
-(just point ansible/puppet/chef at an extra host, no extra setup).
+## Networking
+
+By default, all ports exposed by a container will be mapped to the host
+interface on a random port (the equivalent of `docker run -P`). You are highly
+encouraged to use the default settings when exposing ports as docker will take
+care of conflicts for you automatically.
+
+If you absolutely need to expose a particular container on a specific port
+(maybe you want to run nginx on ports 80 and 443) then oneill allows you map
+specific ports when defining a container. See the example container definition
+below (or browse the examples directory) for a fuller explanation.
+
+
+## Persistence
+
+By default, containers do not have any guarantee of persistence. Whilst
+volumes are writable during the lifetime of a container, unless persistence
+support is explicitly enabled in the container definition all volumes will be
+removed when a container is restarted, removed or upgraded.
+
+oneill maintains its own folder hierachy in a configurable location for
+mounting volumes into containers. The only reason oneill does not just let
+docker manage the location of the data is that this method makes it easier to
+persist data across container restarts/changes.
+
+It's important to note that oneill does not allow mounting of arbitrary
+directories or files into a container, it simply persists the volumes already
+defined in the image being used.
+
+
+## Interacting with docker from within a container
+
+If configured to do so, oneill can bind-mount the unix socket used for the
+docker API in a container so it can be accessed by applications running within
+it. It is not reccommended to enable this feature for most containers but it
+can be very useful for building certain types of services. Some simple
+examples of where this feature can be used:
+
+- Watch for changes to running containers and configure a reverse proxy to
+  route HTTP traffic to properly configured applications.
+- Expose system stats by reading from the Docker stats API and presenting via
+  a simple web dashboard.
+- Connect to stdout/stderr of other running containers and persist log data
+  off-server.
+- Announce container information via a service-discovery system like etcd.
 
 
 ## What is it useful for?
 
 oneill may have a narrow focus and opinionated feature set, but it's quite
 useful in a number of scenarios and for a number of reasons. The following
-list is just an example of the situations in which oneill is useful:
+list is just an example of some of the situations in which oneill is useful:
 
-- As a one-off deploy step to pull the latest image for a container, start it
-  up and perform a zero downtime upgrade of the application.
+- As a one-off deploy step to pull the latest image for a container, and run
+  it with a specific configuration.
 - Run on a schedule (maybe via cron) to continuously check a registry for
-  updates and perform a zero-downtime update when one is found.
+  updates and perform appropriate updates when any are found.
 - Run on multiple servers with the same configuration (possibly behind a load
-  balancer) to easily scale out a set of containers across multiple hosts.
+  balancer) to easily scale out a set of 12-factor style containers across
+  multiple hosts.
 - A continuous integration server pushing successful builds to a private
   docker registry could easily be combined with oneill to form part of a
   continuous delivery workflow.
 - oneill's support for reading container definitions from a remote HTTP API
-  could be used to form the building blocks of a PaaS-like system. oneill
-  can easily be made to work with something like `etcd` (or your own custom
-  API) as a control channel.
-- Providing a consistent deployment and operations platform, regardless of the
-  type of application being built or stack being used (provided it conforms to
-  the 12-factor style, of course).
+  could be used to form the building blocks of a PaaS-like system.
 
 
 ## How it works
@@ -74,16 +108,13 @@ straightforward I hope), but a rough overview is provided below:
     Load configuration from disk
     Load container definitions (from disk/remote api/etc)
     Validate container definitions
+    Stop and remove old/redundant docker containers
     For each valid container definition:
         Pull latest docker image (if available)
         Validate docker image
-        Check if a container is already running tha matches the definition
+        Check if a container is already running that matches the definition
+        Stop the old container if necessary
         Start a new container if necessary
-    Write new nginx configuration and htpasswd files to disk
-    Remove redundant nginx configuration and htpasswd files
-    Reload nginx configuration
-    Sleep for a few seconds to allow old connections to finish gracefully
-    Stop and remove old/redundant docker containers
 ```
 
 
@@ -134,52 +165,58 @@ file. The following types of URI are supported:
 - `https://www.somedomain.com/api/that/returns/json/or/yaml/`: The remote URL
   is fetched and parsed as JSON/YAML. The response should contain a list
   (array) of container definitions.
+- `stdin://`: oneill will load container definitions passed via STDIN, e.g.
+  `cat containers.yaml | oneill`
 
-Definitions can also be read from STDIN. When data is passed to STDIN, any URI
-specified in the configuration file will be ignored. For example:
 
-```bash
-$ cat containers.yaml | oneill
-```
+## Example container definition
+
+A number of example configurations and definition setups are included in the
+examples directory, you can browse those to get an idea of how oneill can be
+used.
 
 A single container definition should contain the following data:
 
 ```yaml
-# subdomain that this container will be served on (also used to form part of
-# the running container name). This value is required.
-subdomain: example-subdomain
+# container_name controls the user-specified part of the name oneill will give
+# to the container at startup time. This setting is required.
+container_name: example-name
 
-# the docker image that will be used to run this container. This value is
-# required.
-image: example/some-container
+# repo_tag controls the container that will be pulled and run for this
+# container definition. This is in the same format as you would pass to
+# `docker run`, e.g. `locahost:5000/myimage:latest`, `nginx`, `ubuntu:14.04`,
+# `my.private.repo/myotherimage`. This setting is required.
+repo_tag: example/some-container
+```
 
-# the specific tag that should be used when running this container. This value
-# is optional (default: "latest").
-tag: v123
+In addition to the required settings above, the follwing optional settings can
+also be added to a container definition.
 
-# disable nginx globally (disable all interaction with nginx). This value is
-# optional (default: false).
-nginx_disabled: false
-
-# When an image exposes more than one port, the following option must be set
-# to a valid port number that's exposed by the image. If this is not set
-# correctly oneill will not be able to expose this container via nginx. This
-# value is optional (default: 0).
-nginx_exposed_port: 0
-
+```yaml
 # add custom environment variables that will be passed into the container when
 # started. This value is optional (default: []).
 env:
   - "EXAMPLE=example"
   - "URL=http://www.example.com"
 
-# adding htpasswd entries will cause oneill to lock this container/subdomain
-# down behind HTTP basic auth. Note: unless you're running on HTTPS it
-# probably isn't a good idea to use this feature.. This value is optional
-# (default: []).
-htpasswd:
-  - bob:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
-  - jon:$apr1$SBA9z0lK$B7c8xGmNJ427sINH2BGEr.
+# should persistence be enabled for this container? default off as we don't
+# want to encourage people to use local persistence (whilst acknowledging that
+# it is necessary in some situations).
+persistence_enabled: false
+
+# should the docker control socket be bind-mounted into this container? this
+# is useful for service containers that need to be able to see or control what
+# other containers are doing (automated logging, reverse proxy, etc. need this
+# functionality).
+docker_control_enabled: false
+
+# service containers allow an explicit port mapping as some services need to
+# be exposed on specific ports to be useful e.g. nginx on 80/443 for serving
+# http. Regular containers do not need this functionality. Keys are host port
+# numbers and values are the internal port numbers that should be exposed.
+port_mapping:
+  80: 80
+  443: 443
 ```
 
 
@@ -199,15 +236,11 @@ $ oneill -config=/home/me/my_oneill_config.yaml
 
 ## Building from source
 
-oneill uses `go-bindata` to embed some assets into the built binary, you'll
-need to have this installed before you're able to build the application.
-
 oneill uses `godep` to manage its dependencies. Provided you have `godep`
 installed and the repository is cloned into your `$GOPATH`, building oneill
 locally should be as simple as:
 
 ```bash
-$ go-bindata -o nginxclient/bindata.go -pkg=nginxclient -prefix=nginxclient/ nginxclient/templates/
 $ godep go build
 ```
 

@@ -1,0 +1,17 @@
+#####################
+# Worker containers #
+#####################
+
+- container_name: worker_ephemeral_0
+  repo_tag: registry.mydomain.com/celery-worker:latest
+
+- container_name: worker_ephemeral_1
+  repo_tag: registry.mydomain.com/celery-worker:latest
+
+- container_name: worker_persistent_0
+  repo_tag: registry.mydomain.com/sidekiq-worker:latest
+  persistence_enabled: true
+
+- container_name: worker_persistent_1
+  repo_tag: registry.mydomain.com/sidekiq-worker:latest
+  persistence_enabled: true

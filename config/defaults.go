@@ -6,17 +6,11 @@ import "reflect"
 func loadDefaultConfig() *Configuration {
 
 	config := &Configuration{
-		LogFormat:              "text",
-		LogLevel:               "info",
-		DefinitionsURI:         "file:///etc/oneill/definitions",
-		DockerApiEndpoint:      "unix:///var/run/docker.sock",
-		NginxConfigDirectory:   "/etc/nginx/sites-enabled",
-		NginxHtpasswdDirectory: "/etc/nginx/htpasswd",
-		ServingDomain:          "example.com",
-		NginxDisabled:          false,
-		NginxSSLDisabled:       false,
-		NginxSSLCertPath:       "/etc/ssl/certs/oneill.crt",
-		NginxSSLKeyPath:        "/etc/ssl/private/oneill.pem",
+		LogFormat:            "text",
+		LogLevel:             "info",
+		DefinitionsURI:       "file:///etc/oneill/definitions",
+		DockerApiEndpoint:    "unix:///var/run/docker.sock",
+		PersistenceDirectory: "/var/lib/oneill/data",
 	}
 
 	return config
