@@ -1,0 +1,6 @@
+# define custom credentials for our private docker registry, you can define as
+# many sets of credentials as are required.
+registry_credentials:
+    registry.mydomain.com:
+        username: myusername
+        password: mypassword
