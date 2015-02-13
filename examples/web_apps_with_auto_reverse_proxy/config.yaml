@@ -1,0 +1,9 @@
+# tell oneill to load container definitions from a non-default location
+definitions_uri: "file:///etc/oneill/definitions.yaml"
+
+# tell oneill to output log data in JSON format to allow for easier ingestion
+# into a log aggregator like fluentd.
+log_format: json
+
+# turn on debug logging
+log_level: debug
