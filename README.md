@@ -207,7 +207,10 @@ persistence_enabled: false
 # should the docker control socket be bind-mounted into this container? this
 # is useful for service containers that need to be able to see or control what
 # other containers are doing (automated logging, reverse proxy, etc. need this
-# functionality).
+# functionality). When this option is enabled, the host's
+# `/var/lib/docker/containers` directory will be mounted into the container
+# also. Containers can use this functionality to do things like see the logs
+# of other containers.
 docker_control_enabled: false
 
 # service containers allow an explicit port mapping as some services need to

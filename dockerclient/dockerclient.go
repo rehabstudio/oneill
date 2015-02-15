@@ -131,7 +131,10 @@ func StartContainer(name string, repoTag string, env []string, dockerControlEnab
 	// configure docker socket mount if required
 	var binds []string
 	if dockerControlEnabled {
-		binds = []string{"/var/run/docker.sock:/var/run/docker.sock"}
+		binds = []string{
+			"/var/run/docker.sock:/var/run/docker.sock",
+			"/var/lib/docker/containers:/var/lib/docker/containers",
+		}
 	} else {
 		binds = []string{}
 	}

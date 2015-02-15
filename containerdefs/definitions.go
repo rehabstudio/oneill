@@ -95,6 +95,12 @@ func (cd *ContainerDefinition) AlreadyRunning(persistenceDir string) bool {
 		return false
 	}
 
+	// check that the running container has correctly bind-mounted the docker
+	// containers directory (if configured to do so)
+	if cd.DockerControlEnabled != dockerclient.DockerContainersDirMounted(runningContainer.HostConfig.Binds) {
+		return false
+	}
+
 	// check that the running container's port mappings match those in the
 	// container definition
 	if !dockerclient.PortsMatch(cd.PortMapping, runningContainer.HostConfig.PortBindings) {

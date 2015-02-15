@@ -6,6 +6,19 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
+// DockerContainersDirMounted checks that the directory containing logs for
+// each container has been bind-mounted into the container.
+func DockerContainersDirMounted(binds []string) bool {
+
+	for _, bind := range binds {
+		if bind == "/var/lib/docker/containers:/var/lib/docker/containers" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // DockerSocketMounted checks that the unix socket docker uses to expose its
 // API has been bind-mounted into the container.
 func DockerSocketMounted(binds []string) bool {
