@@ -159,16 +159,7 @@ func StartContainer(name string, repoTag string, env []string, dockerControlEnab
 		exposedPorts[docker.Port(fmt.Sprintf("%d/tcp", internalPort))] = struct{}{}
 	}
 
-	// if we've got any explicitly exposed ports then don't publish all ports
-	// for the container
-	var publishAllPorts bool
-	if len(exposedPorts) > 0 {
-		publishAllPorts = false
-	} else {
-		publishAllPorts = true
-	}
-
-	hostConfig := docker.HostConfig{PublishAllPorts: publishAllPorts, RestartPolicy: docker.RestartOnFailure(10), Binds: binds, PortBindings: portBindings}
+	hostConfig := docker.HostConfig{RestartPolicy: docker.RestartOnFailure(10), Binds: binds, PortBindings: portBindings}
 	createContainerOptions := docker.CreateContainerOptions{
 		Name:       name,
 		Config:     &docker.Config{Image: repoTag, Env: env, ExposedPorts: exposedPorts},

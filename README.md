@@ -32,10 +32,10 @@ the validated container definitions loaded earlier.
 
 ## Networking
 
-By default, all ports exposed by a container will be mapped to the host
-interface on a random port (the equivalent of `docker run -P`). You are highly
-encouraged to use the default settings when exposing ports as docker will take
-care of conflicts for you automatically.
+By default, ports exposed by a container will not be mapped to the host
+interface. Docker's internal networking stack will still allow host<->container
+and container<->container communication, so in most cases binding to the host
+interface should not be necessary..
 
 If you absolutely need to expose a particular container on a specific port
 (maybe you want to run nginx on ports 80 and 443) then oneill allows you map
