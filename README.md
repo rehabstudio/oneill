@@ -194,10 +194,18 @@ also be added to a container definition.
 
 ```yaml
 # add custom environment variables that will be passed into the container when
-# started. This value is optional (default: []).
+# started. This value is optional (default: []). Note that any YAML data is
+# valid here, if the value is not a simple string it will be serialised to JSON
+# before passing to the new container.
 env:
-  - "EXAMPLE=example"
-  - "URL=http://www.example.com"
+  EXAMPLE: example
+  URL: http://www.example.com
+  SOMELIST:
+    - something
+    - some other thing
+  SOMEMAP:
+    somekey: somevalue
+    someotherkey: someothervalue
 
 # should persistence be enabled for this container? default off as we don't
 # want to encourage people to use local persistence (whilst acknowledging that
