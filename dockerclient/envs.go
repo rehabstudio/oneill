@@ -1,10 +1,52 @@
 package dockerclient
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 )
+
+// Env represents a list of key-pair represented in the form KEY=VALUE.
+type Env []string
+
+// UnmarshalYAML converts the YAML map into a slice of strings containing `k=v`
+// pairs.
+func (m *Env) UnmarshalYAML(unmarshal func(v interface{}) error) error {
+	if m == nil {
+		return errors.New("Env: UnmarshalYAML on nil pointer")
+	}
+
+	// unmarshall yaml data to struct
+	interfaceMap := make(map[string]interface{})
+	err := unmarshal(&interfaceMap)
+	if err != nil {
+		return err
+	}
+
+	// jsonify all map values so we can treat them as raw strings instead of
+	// rich data structures
+	stringMap := make(map[string]string)
+	for k, v := range interfaceMap {
+		switch v := v.(type) {
+		case string:
+			stringMap[k] = v
+		default:
+			_tmp, err := json.Marshal(v)
+			if err != nil {
+				return err
+			}
+			stringMap[k] = string(_tmp)
+		}
+	}
+
+	// convert newly created struct into a simple slice of k=v environment
+	// variable pairs
+	*m = envMapToSlice(stringMap)
+
+	return nil
+}
 
 // envSliceToMap returns the map representation of a slice of strings
 // containing environment variables.

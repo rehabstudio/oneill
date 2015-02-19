@@ -31,7 +31,7 @@ type ContainerDefinition struct {
 	// passed to new containers at runtime. Variables set here will override
 	// environment variables set anywhere else (including those set by oneill
 	// itself), so use with caution.
-	Env []string `yaml:"env"`
+	Env dockerclient.Env `yaml:"env"`
 
 	// should persistence be enabled for this container? default off as we
 	// don't want to encourage people to use persistence (whilst acknowledging
