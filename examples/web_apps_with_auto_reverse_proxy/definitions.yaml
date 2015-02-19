@@ -5,7 +5,7 @@
 - container_name: service-nginx-proxy
   repo_tag: jwilder/nginx-proxy
   env:
-    - "DOCKER_HOST=unix:///var/run/docker.sock"
+    DOCKER_HOST: "unix:///var/run/docker.sock"
   docker_control_enabled: true
   port_mapping:
     80: 80
@@ -18,19 +18,19 @@
 - container_name: demo-ruby
   repo_tag: google/ruby-hello
   env:
-    - "VIRTUAL_HOST=demo-ruby.mydomain.com"
+    VIRTUAL_HOST: demo-ruby.mydomain.com
 
 - container_name: demo-python
   repo_tag: joshuaconner/hello-world-docker-bottle
   env:
-    - "VIRTUAL_HOST=demo-python.mydomain.com"
+    VIRTUAL_HOST: demo-python.mydomain.com
 
 - container_name: demo-nodejs
   repo_tag: google/nodejs-hello
   env:
-    - "VIRTUAL_HOST=demo-nodejs.myotherdomain.com"
+    VIRTUAL_HOST: demo-nodejs.myotherdomain.com
 
 - container_name: demo-golang
   repo_tag: goexample/outyet
   env:
-    - "VIRTUAL_HOST=demo-golang.myotherdomain.com"
+    VIRTUAL_HOST: demo-golang.myotherdomain.com
