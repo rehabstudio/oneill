@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"os"
 
 	"github.com/Sirupsen/logrus"
@@ -54,6 +55,12 @@ func main() {
 		os.Exit(0)
 	}
 
+	// binding to a local socket ensures that only one instance of oneill is
+	// running at any one time. The socket will be automatically freed up once
+	// the process exits (cleanly or otherwise).
+	l, err := net.Listen("tcp", "127.0.0.1:57922")
+	exitOnError(err, "oneill is already running")
+
 	config, err := config.LoadConfig(configFilePath)
 	exitOnError(err, "Unable to load configuration")
 
@@ -82,4 +89,8 @@ func main() {
 	// process all container definitions
 	err = containerdefs.ProcessContainerDefinitions(config, definitions)
 	exitOnError(err, "Unable to process service container definitions")
+
+	// explicitly close the listening socket
+	l.Close()
+
 }
