@@ -18,6 +18,7 @@ func portMappingToPortBindings(portMapping map[int]int) map[docker.Port][]docker
 			docker.PortBinding{HostIP: "0.0.0.0", HostPort: strconv.Itoa(exposedPort)},
 		}
 		pb[docker.Port(fmt.Sprintf("%d/tcp", internalPort))] = portBindingSlice
+		pb[docker.Port(fmt.Sprintf("%d/udp", internalPort))] = portBindingSlice
 	}
 
 	return pb
@@ -38,19 +39,19 @@ func portInActiveBindings(port int, bindings []docker.PortBinding) bool {
 }
 
 // PortsMatch checks if a running container's exposed ports (those bound to
-// the host interface) match those defined in a the container definition. For
-// now oneill only supports exposing TCP ports (not UDP) but this will change
-// in future.
+// the host interface) match those defined in a the container definition.
 func PortsMatch(definedPorts map[int]int, runningPorts map[docker.Port][]docker.PortBinding) bool {
 
-	for exposedPort, internalPort := range definedPorts {
-		var dPort docker.Port = docker.Port(fmt.Sprintf("%d/tcp", internalPort))
-		portBindings, portMapped := runningPorts[dPort]
-		if !portMapped {
-			return false
-		}
-		if !portInActiveBindings(exposedPort, portBindings) {
-			return false
+	for _, protocol := range []string{"tcp", "udp"} {
+		for exposedPort, internalPort := range definedPorts {
+			var dPort docker.Port = docker.Port(fmt.Sprintf("%d/%s", internalPort, protocol))
+			portBindings, portMapped := runningPorts[dPort]
+			if !portMapped {
+				return false
+			}
+			if !portInActiveBindings(exposedPort, portBindings) {
+				return false
+			}
 		}
 	}
 

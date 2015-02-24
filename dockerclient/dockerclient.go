@@ -157,6 +157,7 @@ func StartContainer(name string, repoTag string, env []string, dockerControlEnab
 	exposedPorts := make(map[docker.Port]struct{})
 	for _, internalPort := range portMapping {
 		exposedPorts[docker.Port(fmt.Sprintf("%d/tcp", internalPort))] = struct{}{}
+		exposedPorts[docker.Port(fmt.Sprintf("%d/udp", internalPort))] = struct{}{}
 	}
 
 	hostConfig := docker.HostConfig{RestartPolicy: docker.RestartOnFailure(10), Binds: binds, PortBindings: portBindings}

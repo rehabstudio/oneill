@@ -35,12 +35,13 @@ the validated container definitions loaded earlier.
 By default, ports exposed by a container will not be mapped to the host
 interface. Docker's internal networking stack will still allow host<->container
 and container<->container communication, so in most cases binding to the host
-interface should not be necessary..
+interface should not be necessary.
 
 If you absolutely need to expose a particular container on a specific port
 (maybe you want to run nginx on ports 80 and 443) then oneill allows you map
-specific ports when defining a container. See the example container definition
-below (or browse the examples directory) for a fuller explanation.
+specific ports when defining a container. Mapped ports are opened for both TCP
+and UDP traffic. See the example container definition below (or browse the
+examples directory) for a fuller explanation.
 
 
 ## Persistence
